@@ -1,0 +1,37 @@
+0.7953 	WARNING 	We strongly recommend you activate the PTB sound engine in PsychoPy prefs as the preferred audio engine. Its timing is vastly superior. Your prefs are currently set to use ['sounddevice', 'PTB', 'pyo', 'pygame'] (in that order).
+5.0294 	WARNING 	User requested fullscreen with size [1024  768], but screen is actually [1920, 1080]. Using actual size
+6.2738 	EXP 	Created window1 = Window(allowGUI=False, allowStencil=False, args=UNKNOWN, autoLog=True, bitsMode=UNKNOWN, blendMode='avg', bpc=(8, 8, 8), color=array([0., 0., 0.]), colorSpace='rgb', depthBits=8, fullscr=<method-wrapper '__getattribute__' of attributeSetter object at 0x0000000464479CF8>, gamma=None, gammaErrorPolicy='raise', kwargs=UNKNOWN, lms=UNKNOWN, monitor=<psychopy.monitors.calibTools.Monitor object at 0x0000000464155D30>, multiSample=False, name='window1', numSamples=2, pos=[0.0, 0.0], screen=0, size=array([1920, 1080]), stencilBits=0, stereo=False, units='height', useFBO=True, useRetina=False, viewOri=0.0, viewPos=None, viewScale=None, waitBlanking=True, winType='pyglet')
+6.2742 	EXP 	window1: mouseVisible = True
+6.2743 	EXP 	window1: recordFrameIntervals = False
+6.4395 	EXP 	window1: recordFrameIntervals = True
+6.6233 	EXP 	window1: recordFrameIntervals = False
+6.7907 	EXP 	Created text_2 = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoLog=True, bold=False, color='white', colorSpace='named', contrast=1.0, depth=0.0, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=0.07, italic=False, languageStyle='LTR', name='text_2', opacity=1.0, ori=0, pos=array([0., 0.]), rgb=array([255., 255., 255.]), text=str(...), units='height', win=Window(...), wrapWidth=1)
+6.7927 	EXP 	Created image = ImageStim(__class__=<class 'psychopy.visual.image.ImageStim'>, autoLog=True, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, flipHoriz=False, flipVert=False, image='sin', interpolate=True, mask=None, maskParams=None, name='image', opacity=1.0, ori=0.0, pos=array([0., 0.]), size=array([53., 30.]), texRes=128, units='cm', win=Window(...))
+6.7943 	EXP 	Created image_2 = ImageStim(__class__=<class 'psychopy.visual.image.ImageStim'>, autoLog=True, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-1.0, flipHoriz=False, flipVert=False, image='sin', interpolate=True, mask=None, maskParams=None, name='image_2', opacity=0.0, ori=0.0, pos=array([0., 0.]), size=array([6., 2.]), texRes=128, units='cm', win=Window(...))
+6.7957 	EXP 	Created image_3 = ImageStim(__class__=<class 'psychopy.visual.image.ImageStim'>, autoLog=True, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, flipHoriz=False, flipVert=False, image='sin', interpolate=True, mask=None, maskParams=None, name='image_3', opacity=0.0, ori=0.0, pos=array([0., 0.]), size=array([6., 2.]), texRes=128, units='cm', win=Window(...))
+6.7958 	EXP 	window1: mouseVisible = True
+6.7972 	EXP 	Created background = ImageStim(__class__=<class 'psychopy.visual.image.ImageStim'>, autoLog=True, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-3.0, flipHoriz=False, flipVert=False, image='sin', interpolate=True, mask=None, maskParams=None, name='background', opacity=0.0, ori=0.0, pos=array([0., 0.]), size=array([53., 30.]), texRes=128, units='cm', win=Window(...))
+6.8151 	EXP 	Created text_3 = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoLog=True, bold=False, color='white', colorSpace='named', contrast=1.0, depth=0.0, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=0.1, italic=False, languageStyle='LTR', name='text_3', opacity=1.0, ori=0, pos=array([0., 0.]), rgb=array([255., 255., 255.]), text='default text', units='height', win=Window(...), wrapWidth=1)
+6.8563 	EXP 	text_2: autoDraw = True
+8.3736 	EXP 	Imported conditions.xlsx as conditions, 100 conditions, 2 params
+8.3744 	EXP 	Created sequence: random, trialTypes=100, nReps=3, seed=None
+8.3748 	EXP 	New trial (rep=0, index=0): OrderedDict([('ImageFile', '9_dist_red/trial14.png'), ('tarPos', [-4, 8])])
+8.4407 	EXP 	window1: mouseVisible = False
+8.4760 	DATA 	Keypress: space
+8.5081 	EXP 	text_2: autoDraw = False
+8.5081 	EXP 	image: image = '9_dist_red/trial14.png'
+8.5081 	EXP 	image_2: pos = array([-4.,  8.])
+8.5081 	EXP 	image_2: image = '9_dist_red/trial14.png'
+8.5081 	EXP 	image: autoDraw = True
+8.5081 	EXP 	image_2: autoDraw = True
+10.3049 	EXP 	window1: mouseVisible = True
+10.3376 	DATA 	Keypress: space
+10.4099 	EXP 	image: autoDraw = False
+10.4099 	EXP 	image_2: autoDraw = False
+10.4099 	EXP 	image_3: pos = array([-4.,  8.])
+10.4099 	EXP 	image_3: image = '9_dist_red/trial14.png'
+10.4099 	EXP 	background: image = '9_dist_red/trial14.png'
+10.4099 	EXP 	image_3: autoDraw = True
+10.4099 	EXP 	background: autoDraw = True
+10.9445 	DATA 	Mouse: Left button down, pos=(825,797)
+11.2251 	EXP 	window1: mouseVisible = True
