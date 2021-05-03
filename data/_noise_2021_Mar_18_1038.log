@@ -1,0 +1,144 @@
+0.8092 	WARNING 	We strongly recommend you activate the PTB sound engine in PsychoPy prefs as the preferred audio engine. Its timing is vastly superior. Your prefs are currently set to use ['sounddevice', 'PTB', 'pyo', 'pygame'] (in that order).
+5.5545 	WARNING 	User requested fullscreen with size [1024  768], but screen is actually [1920, 1080]. Using actual size
+6.5772 	EXP 	Created window1 = Window(allowGUI=False, allowStencil=False, args=UNKNOWN, autoLog=True, bitsMode=UNKNOWN, blendMode='avg', bpc=(8, 8, 8), color=array([0., 0., 0.]), colorSpace='rgb', depthBits=8, fullscr=<method-wrapper '__getattribute__' of attributeSetter object at 0x000000F8ECFC8208>, gamma=None, gammaErrorPolicy='raise', kwargs=UNKNOWN, lms=UNKNOWN, monitor=<psychopy.monitors.calibTools.Monitor object at 0x000000F8EBEE5240>, multiSample=False, name='window1', numSamples=2, pos=[0.0, 0.0], screen=0, size=array([1920, 1080]), stencilBits=0, stereo=False, units='height', useFBO=True, useRetina=False, viewOri=0.0, viewPos=None, viewScale=None, waitBlanking=True, winType='pyglet')
+6.5773 	EXP 	window1: mouseVisible = True
+6.5773 	EXP 	window1: recordFrameIntervals = False
+6.7435 	EXP 	window1: recordFrameIntervals = True
+6.9275 	EXP 	window1: recordFrameIntervals = False
+7.0331 	EXP 	Created noise_2 = NoiseStim(__class__=<class 'psychopy.visual.noise.NoiseStim'>, autoDraw=False, autoLog=True, blendmode='avg', color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, interpolate=False, mask='none', maskParams=None, name='noise_2', opacity=1.0, ori=0.0, phase=array([0., 0.]), pos=array([0., 0.]), rgbPedestal=array([0., 0., 0.]), sf=array([1., 1.]), size=array([0.5, 0.5]), tex='sin', texRes=128, units='height', win=Window(...))
+7.0424 	EXP 	Created noise = NoiseStim(__class__=<class 'psychopy.visual.noise.NoiseStim'>, autoDraw=False, autoLog=True, blendmode='avg', color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-1.0, interpolate=False, mask='none', maskParams=None, name='noise', opacity=1.0, ori=0.0, phase=array([0., 0.]), pos=array([0., 0.]), rgbPedestal=array([0., 0., 0.]), sf=array([1., 1.]), size=array([0.5, 0.5]), tex='sin', texRes=128, units='height', win=Window(...))
+7.1104 	EXP 	noise_2: blendmode = 'avg'
+7.1104 	EXP 	noise_2: mask = None
+7.1104 	EXP 	noise_2: texRes = 128
+7.1104 	EXP 	noise_2: noiseType = 'Binary'
+7.1104 	EXP 	noise_2: noiseImage = None
+7.1104 	EXP 	noise_2: noiseElementSize = 0.0625
+7.1104 	EXP 	noise_2: noiseBaseSf = 8.0
+7.1104 	EXP 	noise_2: noiseBW = 1.0
+7.1104 	EXP 	noise_2: noiseBWO = 30.0
+7.1104 	EXP 	noise_2: noiseFractalPower = 0.0
+7.1104 	EXP 	noise_2: noiseFilterUpper = 8.0
+7.1104 	EXP 	noise_2: noiseFilterLower = 1.0
+7.1104 	EXP 	noise_2: noiseFilterOrder = 0.0
+7.1104 	EXP 	noise_2: noiseClip = 3.0
+7.1104 	EXP 	noise_2: filter = None
+7.1104 	EXP 	noise_2: tex = <class 'numpy.ndarray'>
+7.1104 	EXP 	noise_2: tex = <class 'numpy.ndarray'>
+7.1104 	EXP 	noise: blendmode = 'avg'
+7.1104 	EXP 	noise: mask = None
+7.1104 	EXP 	noise: texRes = 128
+7.1104 	EXP 	noise: noiseType = 'Binary'
+7.1104 	EXP 	noise: noiseImage = None
+7.1104 	EXP 	noise: noiseElementSize = 0.0625
+7.1104 	EXP 	noise: noiseBaseSf = 8.0
+7.1104 	EXP 	noise: noiseBW = 1.0
+7.1104 	EXP 	noise: noiseBWO = 30.0
+7.1104 	EXP 	noise: noiseFractalPower = 0.0
+7.1104 	EXP 	noise: noiseFilterUpper = 8.0
+7.1104 	EXP 	noise: noiseFilterLower = 1.0
+7.1104 	EXP 	noise: noiseFilterOrder = 0.0
+7.1104 	EXP 	noise: noiseClip = 3.0
+7.1104 	EXP 	noise: filter = None
+7.1104 	EXP 	noise: tex = <class 'numpy.ndarray'>
+7.1104 	EXP 	noise: tex = <class 'numpy.ndarray'>
+7.1104 	EXP 	noise_2: autoDraw = True
+7.1104 	EXP 	noise: autoDraw = True
+8.0782 	EXP 	noise_2: autoDraw = False
+8.0782 	EXP 	noise: autoDraw = False
+8.3206 	EXP 	window1: mouseVisible = True
+0.7932 	WARNING 	We strongly recommend you activate the PTB sound engine in PsychoPy prefs as the preferred audio engine. Its timing is vastly superior. Your prefs are currently set to use ['sounddevice', 'PTB', 'pyo', 'pygame'] (in that order).
+4.8642 	WARNING 	User requested fullscreen with size [1024  768], but screen is actually [1920, 1080]. Using actual size
+5.8885 	EXP 	Created window1 = Window(allowGUI=False, allowStencil=False, args=UNKNOWN, autoLog=True, bitsMode=UNKNOWN, blendMode='avg', bpc=(8, 8, 8), color=array([0., 0., 0.]), colorSpace='rgb', depthBits=8, fullscr=<method-wrapper '__getattribute__' of attributeSetter object at 0x000000710F364390>, gamma=None, gammaErrorPolicy='raise', kwargs=UNKNOWN, lms=UNKNOWN, monitor=<psychopy.monitors.calibTools.Monitor object at 0x00000071105843C8>, multiSample=False, name='window1', numSamples=2, pos=[0.0, 0.0], screen=0, size=array([1920, 1080]), stencilBits=0, stereo=False, units='height', useFBO=True, useRetina=False, viewOri=0.0, viewPos=None, viewScale=None, waitBlanking=True, winType='pyglet')
+5.8887 	EXP 	window1: mouseVisible = True
+5.8888 	EXP 	window1: recordFrameIntervals = False
+6.0542 	EXP 	window1: recordFrameIntervals = True
+6.2382 	EXP 	window1: recordFrameIntervals = False
+6.3454 	EXP 	Created noise_2 = NoiseStim(__class__=<class 'psychopy.visual.noise.NoiseStim'>, autoDraw=False, autoLog=True, blendmode='avg', color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, interpolate=False, mask='none', maskParams=None, name='noise_2', opacity=1.0, ori=0.0, phase=array([0., 0.]), pos=array([0., 0.]), rgbPedestal=array([0., 0., 0.]), sf=array([1., 1.]), size=array([0.5, 0.5]), tex='sin', texRes=128, units='height', win=Window(...))
+6.3545 	EXP 	Created noise = NoiseStim(__class__=<class 'psychopy.visual.noise.NoiseStim'>, autoDraw=False, autoLog=True, blendmode='avg', color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-1.0, interpolate=False, mask='none', maskParams=None, name='noise', opacity=1.0, ori=0.0, phase=array([0., 0.]), pos=array([0., 0.]), rgbPedestal=array([0., 0., 0.]), sf=array([1., 1.]), size=array([0.5, 0.5]), tex='sin', texRes=128, units='height', win=Window(...))
+6.3578 	EXP 	Created noise_3 = NoiseStim(__class__=<class 'psychopy.visual.noise.NoiseStim'>, autoDraw=False, autoLog=True, blendmode='add', color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-2.0, interpolate=False, mask='none', maskParams=None, name='noise_3', opacity=1.0, ori=0.0, phase=array([0., 0.]), pos=array([0., 0.]), rgbPedestal=array([0., 0., 0.]), sf=array([1., 1.]), size=array([0.5, 0.5]), tex='sin', texRes=128, units='height', win=Window(...))
+6.4043 	EXP 	noise_2: blendmode = 'avg'
+6.4043 	EXP 	noise_2: mask = None
+6.4043 	EXP 	noise_2: texRes = 128
+6.4043 	EXP 	noise_2: noiseType = 'Binary'
+6.4043 	EXP 	noise_2: noiseImage = None
+6.4043 	EXP 	noise_2: noiseElementSize = 0.0625
+6.4043 	EXP 	noise_2: noiseBaseSf = 8.0
+6.4043 	EXP 	noise_2: noiseBW = 1.0
+6.4043 	EXP 	noise_2: noiseBWO = 30.0
+6.4043 	EXP 	noise_2: noiseFractalPower = 0.0
+6.4043 	EXP 	noise_2: noiseFilterUpper = 8.0
+6.4043 	EXP 	noise_2: noiseFilterLower = 1.0
+6.4043 	EXP 	noise_2: noiseFilterOrder = 0.0
+6.4043 	EXP 	noise_2: noiseClip = 3.0
+6.4043 	EXP 	noise_2: filter = None
+6.4043 	EXP 	noise_2: tex = <class 'numpy.ndarray'>
+6.4043 	EXP 	noise_2: tex = <class 'numpy.ndarray'>
+6.4043 	EXP 	noise: blendmode = 'avg'
+6.4043 	EXP 	noise: mask = None
+6.4043 	EXP 	noise: texRes = 128
+6.4043 	EXP 	noise: noiseType = 'Binary'
+6.4043 	EXP 	noise: noiseImage = None
+6.4043 	EXP 	noise: noiseElementSize = 0.0625
+6.4043 	EXP 	noise: noiseBaseSf = 8.0
+6.4043 	EXP 	noise: noiseBW = 1.0
+6.4043 	EXP 	noise: noiseBWO = 30.0
+6.4043 	EXP 	noise: noiseFractalPower = 0.0
+6.4043 	EXP 	noise: noiseFilterUpper = 8.0
+6.4043 	EXP 	noise: noiseFilterLower = 1.0
+6.4043 	EXP 	noise: noiseFilterOrder = 0.0
+6.4043 	EXP 	noise: noiseClip = 3.0
+6.4043 	EXP 	noise: filter = None
+6.4043 	EXP 	noise: tex = <class 'numpy.ndarray'>
+6.4043 	EXP 	noise: tex = <class 'numpy.ndarray'>
+6.4043 	EXP 	noise_3: blendmode = 'add'
+6.4043 	EXP 	noise_3: mask = None
+6.4043 	EXP 	noise_3: texRes = 128
+6.4043 	EXP 	noise_3: noiseType = 'Binary'
+6.4043 	EXP 	noise_3: noiseImage = None
+6.4043 	EXP 	noise_3: noiseElementSize = 0.0625
+6.4043 	EXP 	noise_3: noiseBaseSf = 8.0
+6.4043 	EXP 	noise_3: noiseBW = 1.0
+6.4043 	EXP 	noise_3: noiseBWO = 30.0
+6.4043 	EXP 	noise_3: noiseFractalPower = 0.0
+6.4043 	EXP 	noise_3: noiseFilterUpper = 8.0
+6.4043 	EXP 	noise_3: noiseFilterLower = 1.0
+6.4043 	EXP 	noise_3: noiseFilterOrder = 0.0
+6.4043 	EXP 	noise_3: noiseClip = 3.0
+6.4043 	EXP 	noise_3: filter = None
+6.4043 	EXP 	noise_3: tex = <class 'numpy.ndarray'>
+6.4043 	EXP 	noise_3: tex = <class 'numpy.ndarray'>
+6.4043 	EXP 	noise_2: autoDraw = True
+6.4043 	EXP 	noise: autoDraw = True
+6.4043 	EXP 	noise_3: autoDraw = True
+7.3888 	EXP 	noise_2: autoDraw = False
+7.3888 	EXP 	noise: autoDraw = False
+7.3888 	EXP 	noise_3: autoDraw = False
+7.6582 	EXP 	window1: mouseVisible = True
+0.7878 	WARNING 	We strongly recommend you activate the PTB sound engine in PsychoPy prefs as the preferred audio engine. Its timing is vastly superior. Your prefs are currently set to use ['sounddevice', 'PTB', 'pyo', 'pygame'] (in that order).
+4.4757 	WARNING 	User requested fullscreen with size [1024  768], but screen is actually [1920, 1080]. Using actual size
+5.4956 	EXP 	Created window1 = Window(allowGUI=False, allowStencil=False, args=UNKNOWN, autoLog=True, bitsMode=UNKNOWN, blendMode='avg', bpc=(8, 8, 8), color=array([0., 0., 0.]), colorSpace='rgb', depthBits=8, fullscr=<method-wrapper '__getattribute__' of attributeSetter object at 0x00000047B7A390F0>, gamma=None, gammaErrorPolicy='raise', kwargs=UNKNOWN, lms=UNKNOWN, monitor=<psychopy.monitors.calibTools.Monitor object at 0x00000047B8C06128>, multiSample=False, name='window1', numSamples=2, pos=[0.0, 0.0], screen=0, size=array([1920, 1080]), stencilBits=0, stereo=False, units='height', useFBO=True, useRetina=False, viewOri=0.0, viewPos=None, viewScale=None, waitBlanking=True, winType='pyglet')
+5.4958 	EXP 	window1: mouseVisible = True
+5.4959 	EXP 	window1: recordFrameIntervals = False
+5.6613 	EXP 	window1: recordFrameIntervals = True
+5.8451 	EXP 	window1: recordFrameIntervals = False
+5.9430 	EXP 	Created noise_3 = NoiseStim(__class__=<class 'psychopy.visual.noise.NoiseStim'>, autoDraw=False, autoLog=True, blendmode='add', color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, interpolate=False, mask='none', maskParams=None, name='noise_3', opacity=1.0, ori=0.0, phase=array([0., 0.]), pos=array([0., 0.]), rgbPedestal=array([0., 0., 0.]), sf=array([1., 1.]), size=array([0.5, 0.5]), tex='sin', texRes=128, units='height', win=Window(...))
+5.9945 	EXP 	noise_3: blendmode = 'add'
+5.9945 	EXP 	noise_3: mask = None
+5.9945 	EXP 	noise_3: texRes = 128
+5.9945 	EXP 	noise_3: noiseType = 'Binary'
+5.9945 	EXP 	noise_3: noiseImage = None
+5.9945 	EXP 	noise_3: noiseElementSize = 0.0625
+5.9945 	EXP 	noise_3: noiseBaseSf = 8.0
+5.9945 	EXP 	noise_3: noiseBW = 1.0
+5.9945 	EXP 	noise_3: noiseBWO = 30.0
+5.9945 	EXP 	noise_3: noiseFractalPower = 0.0
+5.9945 	EXP 	noise_3: noiseFilterUpper = 8.0
+5.9945 	EXP 	noise_3: noiseFilterLower = 1.0
+5.9945 	EXP 	noise_3: noiseFilterOrder = 0.0
+5.9945 	EXP 	noise_3: noiseClip = 3.0
+5.9945 	EXP 	noise_3: filter = None
+5.9945 	EXP 	noise_3: tex = <class 'numpy.ndarray'>
+5.9945 	EXP 	noise_3: tex = <class 'numpy.ndarray'>
+5.9945 	EXP 	noise_3: autoDraw = True
+6.9624 	EXP 	noise_3: autoDraw = False
+7.2266 	EXP 	window1: mouseVisible = True
