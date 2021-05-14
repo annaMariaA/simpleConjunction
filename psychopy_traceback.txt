@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "C:\Users\s03an7\AppData\Local\PsychoPy3\lib\site-packages\psychopy\app\runner\scriptProcess.py", line 120, in whileRunningFile
-    self.onProcessEnded()
-  File "C:\Users\s03an7\AppData\Local\PsychoPy3\lib\site-packages\psychopy\app\runner\runner.py", line 510, in onProcessEnded
-    ScriptProcess.onProcessEnded(self)
-  File "C:\Users\s03an7\AppData\Local\PsychoPy3\lib\site-packages\psychopy\app\runner\scriptProcess.py", line 133, in onProcessEnded
-    self.app.runner.stdOut.write(buff)
-AttributeError: 'NoneType' object has no attribute 'stdOut'
