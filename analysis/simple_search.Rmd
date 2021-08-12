@@ -1,0 +1,110 @@
+---
+title: "Simple Search"
+author: "A Clarke"
+date: "20/05/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggthemes)
+library(brms)
+library(tidybayes)
+
+options(digits = 2, mc.cores = 10)
+
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# First part
+
+```{r}
+d <- read_csv("../data_prolific/accuracy_rt_data.txt") %>%
+  mutate(
+    targ_present = as_factor(targPresent),
+    trial_type = as_factor(targetType),
+    difficulty = as.numeric(as_factor(difficulty))) %>%
+  select(observer, trial_type, targ_present, difficulty, n, rt, accuracy)
+summary(d)
+```
+
+
+```{r}
+
+ggplot(filter(d, accuracy==1), aes(difficulty, rt, colour = targ_present)) + 
+  geom_jitter(alpha = 0.2) +
+  geom_smooth(method = "lm") +
+  facet_wrap( ~ trial_type) +
+  scale_y_log10()
+```
+
+
+```{r}
+d %>% group_by(observer, difficulty, targ_present, trial_type) %>%
+  summarise(rt = median(rt)) %>%
+  pivot_wider(names_from = "trial_type", values_from = "rt") -> d_med
+
+```
+
+
+```{r}
+m <- brm(rt ~ 0 + trial_type + trial_type:difficulty + (0 + trial_type + trial_type:difficulty | observer),
+         data = filter(d, targ_present == 0),
+         family = shifted_lognormal())
+saveRDS(m, "rt_shifted_log.model")
+m <- readRDS("rt_shifted_log.model")
+```
+
+
+```{r}
+m %>% spread_draws(b_Intercept, b_difficulty, r_observer[observer, difficulty]) %>%
+
+  pivot_wider(names_from = "difficulty", values_from = "r_observer") %>%
+  ungroup() %>%
+  mutate(intercept = b_Intercept + Intercept,
+         slope = b_difficulty + difficulty) %>%
+    select(observer, intercept, slope) %>%
+  group_by(observer) %>%
+  median_hdci()-> m2
+
+ggplot(m2, aes(intercept, slope)) + geom_point()
+
+```
+
+# Level 3 data
+
+
+```{r}
+d <- read_csv("../data_collected_by_level_3/Rt_accuracy_extracted.txt") %>%
+  mutate(trial_type = as_factor(targetType)) %>%
+  select(observer, trial_type, targ_present = "targetPres", num_dist = "numDist", rt, accuracy)
+
+ggplot(d, aes(num_dist, rt, colour = trial_type)) + geom_jitter(alpha = 0.2) + 
+  facet_wrap(~targ_present) + 
+  scale_y_log10() + 
+  geom_smooth(method = "lm")
+```
+
+```{r}
+
+m <- brm(rt ~ 0 + trial_type + trial_type:num_dist + (0 + trial_type + trial_type:num_dist | observer),
+         data = filter(d, targ_present == 1, rt > 0.05),
+         family = shifted_lognormal())
+saveRDS(m, "rt3_shifted_log.model")
+
+```
+
+```{r}
+
+m <- readRDS("rt3_shifted_log.model")
+
+
+
+
+d2 %>% group_by(observer, trial_type) %>%
+  summarise(med_rt = median(rt)) %>%
+  pivot_wider(names_from = "trial_type", values_from = "med_rt") -> d3
+
+cor.test(d3$redHorizontal, d3$greenVertical)
+
