@@ -15,7 +15,6 @@ if(!dir.exists(cache_dir)) {
 }
 
 
-
 d <- read_csv("../data_prolific/accuracy_rt_data.txt") %>%
   mutate(
     targ_present = as_factor(targPresent),

@@ -38,7 +38,7 @@ get_prior(formula,
                           link_bias = "identity"))
 
 prior <- c(
-  prior("normal(0, 1)", class = "b"),
+  prior("normal(0, 2)", class = "b"),
   set_prior("normal(1.5, 1)", class = "b", dpar = "bs"),
   set_prior("normal(0.2, 0.1)", class = "b", dpar = "ndt"),
   set_prior("normal(0.5, 0.2)", class = "b", dpar = "bias")
@@ -86,6 +86,8 @@ initfun <- function() {
 #                   control = list(max_treedepth = 15))
 # 
 # saveRDS(fit_wiener, "tmp.model")
+
+rm(tmp_dat)
 
 fit_wiener <- readRDS("tmp.model")
 
@@ -160,6 +162,7 @@ plt_cors(comparison_intercepts[!str_detect(comparison_intercepts, "(bias_|bs_)")
    x = 1:3
    
    out <- tibble(
+     participant = d$participant[ii],
      targ = d$targ[ii],
      trial = d$trial[ii],
      x  =1:3,
@@ -170,6 +173,7 @@ plt_cors(comparison_intercepts[!str_detect(comparison_intercepts, "(bias_|bs_)")
    
  }
 
+# get fixed effects
 fit_wiener %>% gather_draws(`b.*`, regex = TRUE) %>%
    rename(var = ".variable") %>%
    mutate(var = str_remove(var, "b_"))  %>%
@@ -179,7 +183,50 @@ fit_wiener %>% gather_draws(`b.*`, regex = TRUE) %>%
   separate(var, into = c("targ", "trial")) %>%
   mutate(targ = str_remove(targ, "targ"),
          trial = str_remove(trial, "trial")) %>% 
-     pivot_wider(names_from = "param", values_from = ".value") -> rate_samples
+     pivot_wider(names_from = "param", values_from = ".value")  -> rate_samples
+
+# get participant estimates
+fit_wiener %>% gather_draws(`r_observer\\[.*`, regex = TRUE) %>%
+  separate(.variable, into = c("participant", "param"), sep = ",") %>%
+  mutate(param = str_remove(param, "\\]"),
+         participant = str_remove(participant, "r_observer\\["),
+         param = if_else(str_detect(param, "difficulty"), param, paste(param, ":intercept", sep=""))) %>%
+  separate(param, c("targ", "trial", "param")) %>%
+  mutate(targ = str_remove(targ, "targ"),
+         trial = str_remove(trial, "trial")) %>% 
+  group_by(targ, trial, param, participant) %>%
+  summarise(value = mean(.value), .groups = "drop") %>%
+  pivot_wider(names_from = param, values_from = "value") %>%
+  rename(z_slo = "difficulty", z_int = "intercept") %>%
+  left_join(rate_samples %>% group_by(targ,trial) %>%
+              summarise(intercept = mean(intercept),
+                        slope = mean(slope))) %>%
+  mutate(slope = slope + z_slo,
+         intercept =  intercept + z_int) %>%
+  select(targ, trial, participant, intercept, slope) -> rate_participants
+
+rates <- bind_rows(
+  rate_samples %>% mutate(participant = "fixd"), 
+  rate_participants)
+
+
+map_dfr(1:nrow(rates), linear_pred, rates) -> r
+
+ggplot(r, aes(x = x, y = rate, fill = targ)) + 
+  geom_hline(yintercept = 0) +
+  stat_lineribbon(data = filter(r, participant == "fixd"), .width = c(0.53, 0.89, 0.97), alpha = 0.25)  +
+  geom_path(data = filter(r, participant != "fixd"), 
+            aes(colour = targ, group = interaction(targ,participant)),
+            alpha = 0.5, linetype = 2) + 
+  facet_wrap(~trial) + 
+  theme_bw() + 
+  scale_x_continuous("search difficulty", breaks = 1:3, labels = c("easy", "mid","hard")) +
+  scale_y_continuous("drift rate") + 
+  ggthemes::scale_fill_ptol() + 
+  ggthemes::scale_colour_ptol() + 
+  ggtitle("fixed effects for drift rate") -> plt_rate
+
+
 
 map_dfr(1:nrow(rate_samples), linear_pred, rate_samples) %>%
   ggplot(aes(x = x, y = rate, fill = targ)) + 
@@ -196,6 +243,24 @@ map_dfr(1:nrow(rate_samples), linear_pred, rate_samples) %>%
 plt_rate / plt_cor / plt_int + plot_layout(guides = "collect")
 
 ggsave("rate_param.pdf", width = 6, height = 10)
+rm(rate_samples)
+
+
+## plot boundary sep (bs) and bias
+
+fit_wiener %>% gather_draws(`b.*`, regex = TRUE) %>%
+  rename(var = ".variable") %>%
+  mutate(var = str_remove(var, "b_"))  %>%
+  filter(str_detect(var, "(bs|bias)_")) %>%
+  separate(var, into = c("param", "trial")) %>%
+  mutate(trial = str_remove(trial, "trial")) %>% 
+  ggplot(aes(x = .value, fill = trial)) + 
+  geom_density(alpha = 0.44) + 
+  facet_wrap(~param, scales = "free") +
+  ggthemes::scale_fill_fivethirtyeight() + 
+  theme_bw()
+
+
 
 
 #### plot predicted rt and acc against empirical values
