@@ -4,13 +4,10 @@ library(tidybayes)
 library(patchwork)
 
 
-d <- read_csv("../data_prolific/accuracy_rt_data.txt") %>%
+d <- read_csv("../cluster/data_for_model.csv") %>%
   mutate(
-    targ_present = as_factor(targPresent),
-    targ_present = fct_recode(targ_present, present = "1", absent = "0"),
-    trial_type = as_factor(targetType),
-    difficulty = as.numeric(as_factor(difficulty))) %>%
-  select(observer, trial="trial_type", targ="targ_present", difficulty, n, rt, accuracy) 
+    targ = as_factor(targ)) %>%
+  select(observer, trial, targ, difficulty, rt, accuracy) 
 
 d$response <- NA
 d$response[which(d$targ=="present" & d$accuracy==1)] = 1
@@ -25,71 +22,8 @@ summary(d)
 d <- filter(d, rt > 0.2, rt < 20)
 
 
-formula <- bf(rt | dec(response) ~ 
-              0 + targ:trial  + targ:trial:difficulty  + (0 + targ:trial + targ:trial:difficulty|p|observer), 
-              bs ~ 0 + trial + (0 + trial|p|observer), 
-              ndt ~ 0 + trial,
-              bias ~ 0 + trial + (0 + trial|p|observer))
+fit_wiener <- readRDS("models/wiener_fit.model")
 
-get_prior(formula,
-          data = d, 
-          family = wiener(link_bs = "identity", 
-                          link_ndt = "identity", 
-                          link_bias = "identity"))
-
-prior <- c(
-  prior("normal(0, 2)", class = "b"),
-  set_prior("normal(1.5, 1)", class = "b", dpar = "bs"),
-  set_prior("normal(0.2, 0.1)", class = "b", dpar = "ndt"),
-  set_prior("normal(0.5, 0.2)", class = "b", dpar = "bias")
-)
-
-
-make_stancode(formula, 
-              family = wiener(link_bs = "identity", 
-                              link_ndt = "identity",
-                              link_bias = "identity"),
-              data = d, 
-              prior = prior)
-
-tmp_dat <- make_standata(formula, 
-                         family = wiener(link_bs = "identity", 
-                                         link_ndt = "identity",
-                                         link_bias = "identity"),
-                         data = d, prior = prior)
-str(tmp_dat, 1, give.attr = FALSE)
-
-initfun <- function() {
-  list(
-    b = rnorm(tmp_dat$K),
-    b_bs = runif(tmp_dat$K_bs, 1, 2),
-    b_ndt = runif(tmp_dat$K_ndt, 0.01, 0.1),
-    b_bias = rnorm(tmp_dat$K_bias, 0.5, 0.1),
-    sd_1 = runif(tmp_dat$M_1, 0.5, 1),
-    z_1 = matrix(rnorm(tmp_dat$M_1*tmp_dat$N_1, 0, 0.01),
-                 tmp_dat$M_1, tmp_dat$N_1),
-    L_1 = diag(tmp_dat$M_1)
-  )
-}
-
-
-
-# fit_wiener <- brm(formula,
-#                   data = d,
-#                   family = wiener(link_bs = "identity",
-#                                   link_ndt = "identity",
-#                                   link_bias = "identity"),
-#                   prior = prior,
-#                   inits = initfun,
-#                   iter = 1000,
-#                   chains = 4, cores = 4,
-#                   control = list(max_treedepth = 15))
-# 
-# saveRDS(fit_wiener, "tmp.model")
-
-rm(tmp_dat)
-
-fit_wiener <- readRDS("tmp.model")
 
 #cor_idx <- get_variables(fit_wiener) %>% str_starts("cor")
 #cor_name <- get_variables(fit_wiener) [cor_idx]
@@ -100,7 +34,7 @@ fit_wiener %>% gather_draws(`cor.*`, regex = TRUE) %>%
   mutate(var = str_remove(var, "cor_observer__")) -> cor_post 
 
 
-paradigms <- "(tex|line|greenVertical)"
+paradigms <- "(tex|ori|conj)"
 vars <- c("targpresent:trial", "targabsent:trial", 
           "bias_trial", "bs_trial" )
 
@@ -152,10 +86,11 @@ plt_cors <- function(comps, slopes = FALSE) {
   
 }
 
-plt_cors(comparison_slopes, TRUE) + ggtitle("correlation of observer rate slopes") -> plt_cor
+plt_cor <- plt_cors(comparison_slopes, TRUE) + 
+  ggtitle("correlation of observer rate slopes") 
 
-plt_cors(comparison_intercepts[!str_detect(comparison_intercepts, "(bias_|bs_)")]) +
-  ggtitle("correlation of observer rate interecepts") -> plt_int
+plt_int <- plt_cors(comparison_intercepts[!str_detect(comparison_intercepts, "(bias_|bs_)")]) +
+  ggtitle("correlation of observer rate interecepts") 
  
  linear_pred <- function(ii, d) {
    
@@ -183,6 +118,7 @@ fit_wiener %>% gather_draws(`b.*`, regex = TRUE) %>%
   separate(var, into = c("targ", "trial")) %>%
   mutate(targ = str_remove(targ, "targ"),
          trial = str_remove(trial, "trial")) %>% 
+  select(-.chain, -.iteration) %>%
      pivot_wider(names_from = "param", values_from = ".value")  -> rate_samples
 
 # get participant estimates
@@ -197,12 +133,11 @@ fit_wiener %>% gather_draws(`r_observer\\[.*`, regex = TRUE) %>%
   group_by(targ, trial, param, participant) %>%
   summarise(value = mean(.value), .groups = "drop") %>%
   pivot_wider(names_from = param, values_from = "value") %>%
-  rename(z_slo = "difficulty", z_int = "intercept") %>%
+  rename(z_slo = "difficulty") %>%
   left_join(rate_samples %>% group_by(targ,trial) %>%
               summarise(intercept = mean(intercept),
                         slope = mean(slope))) %>%
-  mutate(slope = slope + z_slo,
-         intercept =  intercept + z_int) %>%
+  mutate(slope = slope + z_slo) %>% #  intercept =  intercept + z_int
   select(targ, trial, participant, intercept, slope) -> rate_participants
 
 rates <- bind_rows(
@@ -227,19 +162,6 @@ ggplot(r, aes(x = x, y = rate, fill = targ)) +
   ggtitle("fixed effects for drift rate") -> plt_rate
 
 
-
-map_dfr(1:nrow(rate_samples), linear_pred, rate_samples) %>%
-  ggplot(aes(x = x, y = rate, fill = targ)) + 
-  geom_hline(yintercept = 0) +
-  stat_lineribbon(.width = c(0.53, 0.89, 0.97), alpha = 0.25)  +
-  facet_wrap(~trial) + 
-  theme_bw() + 
-  scale_x_continuous("search difficulty", breaks = 1:3, labels = c("easy", "mid","hard")) +
-  scale_y_continuous("drift rate") + 
-  ggthemes::scale_fill_ptol() + 
-  ggtitle("fixed effects for drift rate") -> plt_rate
-
-  
 plt_rate / plt_cor / plt_int + plot_layout(guides = "collect")
 
 ggsave("rate_param.pdf", width = 6, height = 10)
@@ -264,14 +186,14 @@ fit_wiener %>% gather_draws(`b.*`, regex = TRUE) %>%
 
 
 #### plot predicted rt and acc against empirical values
-NPRED <- 1
+NPRED <- 10
 pred_wiener <- predict(fit_wiener, 
                        summary = FALSE, 
                        negative_rt = TRUE, 
                        nsamples = NPRED,
                        re_formula = NULL)
-d$p <- as.numeric(pred_wiener)
-
+d$p <- as.numeric(colMeans(pred_wiener))
+rm(pred_wiener)
 
 ## plot accuracy
 d %>% mutate(
@@ -283,15 +205,18 @@ d %>%
   group_by(observer, trial, targ, difficulty) %>%
   summarise(
     accuracy = mean(accuracy),
-    pred_acc = mean(p_ac)) %>% 
-  pivot_longer(c(accuracy, pred_acc), names_to = "type", values_to = "accuracy") %>%
-  ggplot(aes(x = difficulty, y = accuracy, colour = type, group = interaction(type,observer))) +
-  geom_path() +
+    pred_acc = mean(p_ac)) %>%
+  ggplot(aes(x = pred_acc, y = accuracy, colour = difficulty)) +
+  geom_abline(linetype = 2) + 
+  geom_jitter(alpha = 0.5, position = "jitter") +
+  geom_smooth(method = "lm", aes(group = 1), colour = "grey") + 
   facet_grid(targ~trial) +
-  ggthemes::scale_colour_ptol()
+  ggthemes::scale_colour_ptol() +
+  coord_fixed() 
 ggsave("model_pred_acc.png", height = 4, width = 6)
-## plot rt
 
+
+## plot rt
 d %>% filter(accuracy == 1) %>%
   group_by(observer, trial, targ, difficulty) %>%
   summarise(empirical = median(rt)) -> ed
@@ -301,16 +226,12 @@ d %>% filter(p_ac == 1)  %>%
   summarise(model = median(rt)) -> pd
 
 full_join(ed, pd) %>%
-  pivot_longer(c(empirical, model), names_to= "type", values_to = "rt") %>%
-  ggplot(aes(x = difficulty, y = rt, colour = type, group = interaction(type,observer))) +
-  geom_path() +
+  ggplot(aes(x = model, y = empirical, colour = difficulty)) +
+  geom_abline(linetype = 2) + 
+  geom_point(alpha = 0.5) +
   facet_grid(targ~trial) +
-  ggthemes::scale_colour_ptol()
+  coord_fixed() + 
+  ggthemes::scale_colour_ptol() 
 ggsave("model_pred_rt.png", height = 4, width = 6)
 
-d %>% mutate(rt = if_else(response == 0, -rt, rt)) %>%
-  pivot_longer(c(rt, p), names_to = "measure", values_to = "rt") %>%
-  ggplot(aes(x = rt, fill = measure)) + 
-  geom_vline(xintercept = 0) + 
-  geom_density(alpha = 0.3) + 
-  facet_wrap(targ ~ trial, scales="free")
+

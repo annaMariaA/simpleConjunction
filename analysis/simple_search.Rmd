@@ -9,14 +9,16 @@ output: html_document
 library(tidyverse)
 library(ggthemes)
 library(brms)
-library(tidybayes)
+#library(tidybayes)
+library(corrr)
+library(patchwork)
 
 options(digits = 2, mc.cores = 10)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Summary Data
+# Data check and merge
 
 ## Import Data
 
@@ -63,6 +65,36 @@ Observer 3's overall accuracy is at chance level, so I suggest we remove
 d <- filter(d, observer != "obs3")
 ```
 
+Now check how people look in the easy condition across tasks. 
+
+```{r}
+d %>% filter(targ == "absent", difficulty == "easy") %>%
+  group_by(observer, difficulty, trial) %>%
+  summarise(accuracy = mean(accuracy), .groups = "drop") %>%
+  ggplot(aes(x = observer, y = accuracy)) + 
+  geom_col(position = position_dodge()) + 
+  facet_wrap(~trial, ncol = 1) +
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  ggthemes::scale_fill_pander() + 
+  ggtitle("Easy Target Absent Trials")
+```
+Suggested exclusion rule: anybody who scores less than 75% in any one of the three target absent (easy difficulty) conditions. 
+
+```{r}
+d %>% filter(targ == "absent", difficulty == "easy") %>%
+  group_by(observer, difficulty, trial) %>%
+  summarise(accuracy = mean(accuracy), .groups = "drop") %>%
+  filter(accuracy < 0.75) %>%
+  unite("key", observer, trial) -> to_remove
+
+d %>% unite("key", observer, trial, remove = FALSE) %>%
+  filter(!(key %in% to_remove$key)) %>%
+  select(-key) -> d
+
+rm(to_remove)
+```
+
 ### Median Reaction Time
 
 Now we will check that RTs are broadly similar across sites. Remember to only take correct trials!
@@ -77,6 +109,7 @@ d %>% filter(accuracy == 1) %>%
   facet_grid(targ~trial) + 
   ggthemes::scale_color_pander()
 ```
+
 Conclude that it is fine to merge pilot datasets?
 
 
@@ -154,17 +187,53 @@ write_csv(d, "../cluster/data_for_model.csv")
 ```
 
 
+# Summary Statistics 
+
+Let's see if there is a correlation between accuracy or rt!
+
+## Accuracy
+
+To start with, we'll ignore *difficulty*
+
+
+```{r}
+d %>% group_by(trial, targ, observer) %>%
+  summarise(accuracy = mean(accuracy), .groups = "drop_last") %>%
+  unite("condition", c(trial, targ)) %>%
+  pivot_wider(names_from = "condition", values_from = "accuracy") %>%
+  select(-observer) %>%
+  correlate(method = "pearson", use = "pairwise.complete.obs") %>%
+  knitr::kable()
+
+d %>% group_by(trial, targ, observer) %>%
+  summarise(accuracy = mean(accuracy), .groups = "drop") %>%
+  pivot_wider(names_from = "trial", values_from = "accuracy") -> dplt
+
+
+plt1 <- ggplot(dplt, aes(x = conj, y = ori)) + geom_point(alpha = 0.5) +
+  facet_wrap(~targ, ncol = 1) + ggtitle("conjunction - orientation")
+
+plt2 <- ggplot(dplt, aes(x = conj, y = tex)) + geom_point(alpha = 0.5) +
+  facet_wrap(~targ, ncol = 1) + ggtitle("conjunction - texture")
+
+plt3 <- ggplot(dplt, aes(x = ori, y = tex)) + geom_point(alpha = 0.5) +
+  facet_wrap(~targ, ncol = 1) + ggtitle("orientation - texture")
+
+plt1 + plt2 + plt3
+
+```
+
 # Modelling
 
 ## Forumla
 
 ```{r}
-formula <- bf(rt | dec(response) ~ 
+formula <- bf(rt | dec(response) ~
               # the first part is the linear predictor for drift rate
-              0 + targ:trial  + targ:trial:difficulty  + 
-                (0 + targ:trial + targ:trial:difficulty|p|observer), 
-              # bs: boundary separation 
-              bs ~ 0 + trial + (0 + trial|p|observer), 
+              0 + targ:trial  + targ:trial:difficulty  +
+                (0 + targ:trial + targ:trial:difficulty|p|observer),
+              # bs: boundary separation
+              bs ~ 0 + trial + (0 + trial|p|observer),
               # ndt: non-decision time
               ndt ~ 0 + trial + (1|p|observer),
               # bias: starting bias for TA or TP
@@ -177,10 +246,10 @@ Print out list of all priors required for our formula, and any defaults that are
 \tiny
 ```{r, eval=FALSE}
 get_prior(formula,
-          data = d, 
-          family = wiener(link_bs = "identity", 
-                          link_ndt = "identity", 
-                          link_bias = "identity"))
+          data = d,
+          family = wiener(link_bs = "log",
+                          link_bias = "logit",
+                          link_ndt = "log"))
 ```
 
 Specify some of our own priors for the fixed effects:
@@ -188,115 +257,58 @@ Specify some of our own priors for the fixed effects:
 \normalsize
 ```{r}
 prior <- c(
-  prior("normal(0, 3)", class = "b"),
-  set_prior("normal(3, 3)", class = "b", dpar = "bs", lb = 0),
-  set_prior("normal(0.2, 0.1)", class = "b", dpar = "ndt", lb = 0),
-  set_prior("normal(0.5, 0.2)", class = "b", dpar = "bias", lb = 0, ub = 1))
+  set_prior("normal(0, 3)", class = "b"),
+  set_prior("normal(1.5, 1)", class = "b", dpar = "bs"),
+  set_prior("normal(0, 0.01)", class = "sd", dpar = "ndt"),
+  set_prior("normal(0.0, 0.5)", class = "b", dpar = "bias"),
+  set_prior("normal(-5, 0.5)", class = "Intercept", dpar = "ndt"))
 ```
 
+## Posterior
 
-```{r, echo = FASLE}
-make_stancode(formula, 
-              family = wiener(link_bs = "identity", 
-                              link_ndt = "identity",
-                              link_bias = "identity"),
-              data = d, 
-              prior = prior)
-
-tmp_dat <- make_standata(formula, 
-                         family = wiener(link_bs = "identity", 
-                                         link_ndt = "identity",
-                                         link_bias = "identity"),
-                         data = d, prior = prior)
-str(tmp_dat, 1, give.attr = FALSE)
-```
-
-We also need to set some starting values, as the model fitting is a wee bit brittle sometimes:
-
-```{r}
-initfun <- function() {
-  list(
-    b = rnorm(tmp_dat$K),
-    b_bs = runif(tmp_dat$K_bs, 1, 2),
-    b_ndt = runif(tmp_dat$K_ndt, 0.01, 0.1),
-    b_bias = rnorm(tmp_dat$K_bias, 0.5, 0.1),
-    sd_1 = runif(tmp_dat$M_1, 0.5, 1),
-    z_1 = matrix(rnorm(tmp_dat$M_1*tmp_dat$N_1, 0, 0.01),
-                 tmp_dat$M_1, tmp_dat$N_1),
-    L_1 = diag(tmp_dat$M_1)
-  )
-}
-```
-
-
-Now make some prior predictions using just the fixed effects
+The model was fit on the cluster using:
 
 ```{r, eval = FALSE}
-dp <- d %>%modelr::data_grid( trial, targ, difficulty, rt = 1, response = 1)
-
-prior_formula <- bf(rt | dec(response) ~ 
-              # the first part is the linear predictor for drift rate
-              0 + targ:trial  + targ:trial:difficulty, 
-              # bs: boundary separation 
-              bs ~ 0 + trial, 
-              # ndt: non-decision time
-              ndt ~ 0 + trial,
-              # bias: starting bias for TA or TP
-              bias ~ 0 + trial)
-
-prior_wiener <- brm(prior_formula,
-                  data = dp,
-                  family = wiener(link_bs = "identity",
-                                  link_ndt = "identity",
-                                  link_bias = "identity"),
+fit_wiener <- brm(formula,
+                  data = d,
+                  family = wiener(link_bs = "log",
+                                  link_bias = "logit",
+                                  link_ndt = "log"),
                   prior = prior,
-                  sample_prior = "only",
                   inits = initfun,
-                  iter = 1000,
-                  chains = 4, cores = 1,
-                  control = list(max_treedepth = 15))
-saveRDS(prior_wiener, "models/prior.model")
-
+                  iter = 2000,
+                  chains = 1,
+                  control = list(max_treedepth = 15, adapt_delta = 0.9))
 ```
 
-```{r, echo = FALSE}
-prior_wiener <- readRDS("models/prior.model")
-```
+
+Let's read in the fitted model
 
 ```{r}
-NPRED <- 10
-pred_wiener <- predict(newdata = dp,
-                       prior_wiener, 
+fit_wiener <- readRDS("models/wiener_fit.model")
+```
+
+Check rhat statistics are close to 1
+
+```{r}
+hist(rhat(fit_wiener))
+```
+
+Max rhat is < 1.01, so no reason to be worried. 
+
+### Posterior Predictions
+
+For now, only take 10 samples from the posterior, but we can increase this later if we wish
+
+```{r, eval = FALSE}
+NPRED <- 5
+pred_wiener <- predict(fit_wiener, 
                        summary = FALSE, 
                        negative_rt = TRUE, 
                        nsamples = NPRED,
-                       re_formula = NULL,
-                       cores = 1)
-
-rownames(pred_wiener) = paste("p", 1:10, sep = "_")
-
-cbind(dp, t(pred_wiener)) %>% as_tibble() %>%
-  pivot_longer(starts_with("p_"), names_to = "iter", values_to = "prt") %>%
-  mutate(prt = if_else(targ=="absent", -prt, prt),
-         pac = if_else(prt<0, 0, 1)) -> dp
-
-dp %>%
-  group_by(trial, targ, iter) %>%
-  summarise(acc = mean(pac)) %>%
-  median_hdci(acc)
-
-dp %>%
-  group_by(trial, targ) %>%
-  median_hdci(abs(prt))
-
-dp %>% ggplot(aes(x = abs(prt))) + geom_density() + 
-  geom_density(data = d, aes(x=rt), colour = "blue") + 
-  scale_x_log10()
-
-```
-
-
-```{r}
+                       re_formula = NULL)
+d$p <- as.numeric(apply(pred_wiener, 2, median)) # this is dumb. Fix!
+rm(pred_wiener)
 
 ## plot accuracy
 d %>% mutate(
@@ -304,16 +316,36 @@ d %>% mutate(
   p_re = if_else(p < 0, 0, 1),
   p_ac = if_else((targ=="present")==p_re, 1, 0)) -> d
 
+d %>%
+  group_by(observer, trial, targ, difficulty) %>%
+  summarise(
+    accuracy = mean(accuracy),
+    pred_acc = mean(p_ac)) %>%
+  ggplot(aes(x = pred_acc, y = accuracy, colour = difficulty)) +
+  geom_abline(linetype = 2) + 
+  geom_jitter(alpha = 0.5, position = "jitter") +
+  geom_smooth(method = "lm", formula = y~x, aes(group = 1), colour = "grey") + 
+  facet_grid(targ~trial, scales = "free") +
+  ggthemes::scale_colour_ptol() 
+ggsave("model_pred_acc.png", height = 4, width = 6)
 
-d %>% mutate(rt = if_else(response == 0, -rt, rt)) %>%
-  pivot_longer(c(rt, p), names_to = "measure", values_to = "rt") %>%
-  ggplot(aes(x = rt, fill = measure)) + 
-  geom_vline(xintercept = 0) + 
-  geom_density(alpha = 0.3) + 
-  scale_x_continuous(limits = c(-10, 10)) + 
-  facet_wrap(targ ~ trial, scales="free")
 
+## plot rt
+d %>% filter(accuracy == 1) %>%
+  group_by(observer, trial, targ, difficulty) %>%
+  summarise(empirical = median(rt)) -> ed
 
+d %>% filter(p_ac == 1)  %>%
+  group_by(observer, trial, targ, difficulty) %>%
+  summarise(model = median(rt)) -> pd
+
+full_join(ed, pd) %>%
+  ggplot(aes(x = model, y = empirical, colour = difficulty)) +
+  geom_abline(linetype = 2) + 
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", formula = y~x, aes(group = 1), colour = "grey") + 
+  facet_grid(targ~trial) +
+  coord_fixed() + 
+  ggthemes::scale_colour_ptol() 
+ggsave("model_pred_rt.png", height = 4, width = 6)
 ```
-
-

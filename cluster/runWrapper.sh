@@ -8,7 +8,7 @@
 #$ -l mem_free=10G
 #$ -m be
 #$ -M ac16696@essex.ac.uk
-#$ -o output_seb.txt
+#$ -o output_wiener.txt
 export PATH=/usr/local/gcc9.3/bin/:$PATH
 export LD_LIBRARY_PATH=/usr/local/gcc9.3/lib64:$LD_LIBRARY_PATH
 export CC=/usr/local/gcc9.3/bin/gcc
