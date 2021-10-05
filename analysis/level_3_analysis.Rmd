@@ -1,0 +1,369 @@
+---
+title: "Lvl3 Data"
+author: "A Clarke"
+date: "16/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggthemes)
+library(brms)
+library(tidybayes)
+library(corrr)
+library(patchwork)
+
+options(digits = 2, mc.cores = 10)
+
+knitr::opts_chunk$set(echo = TRUE)
+theme_set(theme_bw())
+
+source("plot_ddm_model.R")
+```
+
+# Data check and merge
+
+## Import Data
+
+```{r}
+d <- read_csv("../data_collected_by_level_3/Rt_accuracy_extracted.txt") %>%
+  select(-age, -sex, -n) %>%
+  select(obs = "observer", type = "targetType", targ = "targetPres", nD = "numDist", rt, accuracy) %>%
+  mutate(targ = as_factor(targ),
+         targ = fct_recode(targ, absent = "0", present = "1"))
+```
+
+## Check Summary Statistics
+
+
+```{r}
+d %>% group_by(obs,  targ) %>%
+  summarise(accuracy = mean(accuracy)) %>%
+  filter(accuracy < 0.75) -> to_remove
+
+to_remove
+```
+
+Looks like we should remove these two participants
+
+```{r}
+d <- filter(d, !(obs %in% unique(to_remove$obs)))
+```
+
+Let's look at the RTs...
+
+```{r}
+min_rt = 0.200
+max_rt = 10.00
+
+ggplot(d, aes(x = rt)) + geom_histogram(bins = 100) +
+  geom_vline(xintercept = c(min_rt, max_rt), linetype = 2) +
+  scale_x_log10() + 
+  coord_cartesian(xlim = c(0.1, 10)) + 
+  ggtitle("all RTs")
+
+```
+
+
+
+How doe these numbers look when compared to the histogram of all RTs.
+
+```{r}
+
+```
+
+```{r}
+d %>% 
+  summarise(percent_below = 100*mean(rt<min_rt),
+            percent_above = 100*mean(rt>max_rt),
+            percent_removed = percent_below + percent_above) %>%
+  knitr::kable()
+
+d <- filter(d, rt>min_rt, rt<max_rt)
+```
+
+
+## Output for Modelling
+
+We have already removed 
+- the participant who was very inaccurate
+- RTs < 0.250 seconds (0.2% of data)
+- RTs > 250.0 seconds (0.06% of data)
+
+Before we run our model, we have to recover the present/absent responses made for each trial (rather than accuracy)
+
+```{r}
+d$response <- NA
+d$response[which(d$targ=="present" & d$accuracy==1)] = 1
+d$response[which(d$targ=="present" & d$accuracy==0)] = 0
+d$response[which(d$targ=="absent" & d$accuracy==1)] = 0
+d$response[which(d$targ=="absent" & d$accuracy==0)] = 1
+```
+
+Finally, save the data before modelling.
+
+```{r}
+write_csv(d, "../cluster_level3/data_for_model.csv")
+```
+
+
+# Summary Stats
+
+## Accuracy
+
+```{r}
+d %>% group_by(obs, type, targ, nD) %>% 
+  summarise(accuracy = mean(accuracy)) %>%
+  ggplot(aes(x = as.factor(nD), y = accuracy, fill = type)) + 
+  geom_boxplot(alpha = 0.5) + 
+  facet_wrap(~targ) +
+  scale_fill_manual(values = c("#228833", "#EE6677")) +
+  scale_x_discrete("number of distracters") +
+  theme(legend.position = "bottom") -> plt_acc
+
+
+d %>% group_by(obs, type, targ, nD) %>% 
+  summarise(accuracy = mean(accuracy)) %>%
+  filter(targ == "present", nD == 15) %>% 
+  pivot_wider(values_from = "accuracy", names_from = "type") -> d2
+
+ggplot(d2, aes(x = greenVertical, y = redHorizontal)) + 
+  geom_jitter(alpha = 0.5, width = 0.005, height = 0.005) +
+  geom_abline(linetype = 2) +
+  coord_fixed(xlim = c(0.7, 1), ylim = c(0.7, 1)) +
+  scale_x_continuous("green vertical") +
+  scale_y_continuous("red  vertical") -> plt_acc2
+
+plt_acc + plt_acc2 + plot_layout(widths = c(2, 1))
+
+cor.test(d2$greenVertical, d2$redHorizontal)
+
+#bayes_R2(brm(greenVertical ~ redHorizontal, data = d2))
+
+```
+
+## Reaction Time
+
+```{r}
+d %>% filter(accuracy == 1) %>%
+  group_by(obs, type, targ, nD) %>%
+  summarise(median_rt = median(rt)) -> drt
+
+
+drt %>%
+  ggplot(aes(x = nD, y = median_rt, colour = type)) + 
+  geom_jitter(alpha = 0.5, width = 0.5, height = 0) + 
+  facet_wrap(~targ) + 
+  geom_smooth(method = "lm", se = FALSE, formula = y~x) + 
+  scale_colour_manual(values = c("#228833", "#EE6677")) +
+  scale_x_continuous("number of distracters") + 
+  scale_y_continuous("median reaction time (seconds)") +
+  theme(legend.position = "bottom") -> plt_rt
+
+
+drt %>% group_by(obs, type) %>%
+  summarise(mean_med_rt = mean(median_rt)) %>%
+  pivot_wider(values_from = "mean_med_rt", names_from = "type") %>%
+  ggplot(aes(x = greenVertical, y = redHorizontal)) + 
+  geom_jitter(alpha = 0.5, width = 0.005, height = 0.005) +
+  geom_abline(linetype = 2) +
+  coord_fixed(xlim = c(0.5, 1.4), ylim = c(0.5, 1.4)) +
+  scale_x_continuous("green vertical") +
+  scale_y_continuous("red  vertical") -> plt_rt2
+
+(plt_acc + plt_acc2) / (plt_rt + plt_rt2) + plot_layout(widths = c(2, 1), guides = "collect") & theme(legend.position = "none")
+ggsave("../manuscript/figs/exp_lvl_3_emp.pdf", height = 6, width = 9)
+
+
+```
+
+
+# Model 1 (full)
+
+
+```{r}
+m <- readRDS("models/level3_full.model")
+```
+
+## Posterior Predections
+
+```{r}
+d %>%
+  mutate(obs = as.factor(obs),
+         nD = nD/max(nD)) -> d
+# 
+# pred_wiener <- d %>% add_predicted_draws(m,negative_rt = TRUE, n = 100) %>%
+#   ungroup() %>%
+#   select(-.chain, -.draw, -.iteration, -.row) %>%
+#   mutate(rt = if_else(response == 1, rt, -rt)) %>%
+#   pivot_longer(c(rt, .prediction), names_to = "emp_pre", values_to = "rt") %>%
+#   select(-response, -accuracy) %>%
+#   mutate(emp_pre = fct_recode(emp_pre, empirical = "rt", prediction = ".prediction"),
+#                               response = if_else(rt < 0, "absent", "present"),
+#                               response = as_factor(response),
+#                               accuracy = response == targ,
+#                               rt = abs(rt))
+# write_csv(pred_wiener, "predictions_full.csv")
+
+pred_wiener <- read_csv("predictions_full.csv")
+
+ggplot(pred_wiener, aes(x = rt, fill = emp_pre)) + 
+   geom_density(alpha = 0.25) + 
+   facet_grid(nD~targ) +
+   coord_cartesian(xlim = c(0, 2))
+
+pred_wiener %>% group_by(obs, targ, type, nD, emp_pre) %>%
+  summarise(median_rt = median(rt), .groups = "drop") %>%
+  pivot_wider(names_from = "emp_pre", values_from = "median_rt") %>%
+  ggplot(aes(x = prediction, y = empirical, colour = type)) + 
+  geom_abline(linetype = 2) +
+  geom_point(alpha = 0.5) + 
+  coord_fixed() + 
+  scale_colour_manual(values = c("#228833", "#EE6677")) +
+  facet_wrap(~targ) +
+  theme(legend.position = "none") -> plt_rt
+
+
+pred_wiener %>% group_by(obs, targ, type, nD, emp_pre) %>%
+  summarise(accuracy = mean(accuracy), .groups = "drop") %>%
+  pivot_wider(names_from = "emp_pre", values_from = "accuracy") %>%
+  ggplot(aes(x = prediction, y = empirical, colour = type)) + 
+    geom_abline(linetype = 2) +
+   scale_colour_manual(values = c("#228833", "#EE6677")) +
+  facet_wrap(~targ) +
+  coord_fixed(xlim = c(0.75, 1), ylim = c(0.75, 1)) + 
+  geom_jitter(alpha = 0.25, height = 0.01)  +
+  theme(legend.position = "none") -> plt_acc
+
+plt_acc / plt_rt
+
+ggsave("../manuscript/figs/exp_lvl_3_pred.pdf", height = 6, width = 5)
+```
+
+
+```{r}
+m %>% gather_draws(`cor.*`, regex = TRUE) %>%
+  rename(var = ".variable") %>%
+  mutate(var = str_remove(var, "cor_observer__")) -> cor_post 
+
+cor_post %>% group_by(var) %>%
+    summarise(p_not_zero = max(mean(.value > 0), mean(.value < 0))) %>%
+    mutate(p_not_zero = cut(p_not_zero, c(0.5, 0.8, 0.9, 0.95, 0.99, 1))) %>%
+    full_join(cor_post, by = "var") %>%
+  select(-.chain, -.iteration , -.draw) -> cp
+```
+
+## Plot Parameters
+
+```{r}
+plt_rate_fx <- plot_model_params(m, "drift rate")
+plt_rate_rn <- plt_cors(cp, "drift rate") 
+
+plt_bs_fx <- plot_model_params(m, "bs")
+plt_bs_rn <- plt_cors(cp, "bs") 
+
+plt_bias_fx <- plot_model_params(m, "bias")
+plt_bias_rn <- plt_cors(cp, "bias") 
+```
+
+```{r, fig.width=10}
+(plt_rate_fx + plt_bs_fx + plt_bias_fx) / (plt_rate_rn + theme(legend.position = "none") + plt_bs_rn + plt_bias_rn)  + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+ggsave("model_output.png", width = 10, height = 5)
+```
+
+
+# Model 2 (reduced)
+
+
+```{r}
+m <- readRDS("models/level3_redu.model")
+```
+
+
+
+
+## Posterior Predections
+
+```{r}
+# d %>%
+#   mutate(obs = as.factor(obs),
+#          nD = nD/max(nD)) -> d
+
+# pred_wiener <- d %>% add_predicted_draws(m,negative_rt = TRUE, n = 100) %>%
+#   ungroup() %>%
+#   select(-.chain, -.draw, -.iteration, -.row) %>%
+#   mutate(rt = if_else(response == 1, rt, -rt)) %>%
+#   pivot_longer(c(rt, .prediction), names_to = "emp_pre", values_to = "rt") %>%
+#   select(-response, -accuracy) %>%
+#   mutate(emp_pre = fct_recode(emp_pre, empirical = "rt", prediction = ".prediction"),
+#                               response = if_else(rt < 0, "absent", "present"),
+#                               response = as_factor(response),
+#                               accuracy = response == targ,
+#                               rt = abs(rt))
+# write_csv(pred_wiener, "predictions_redu.csv")
+
+pred_wiener <- read_csv("predictions_redu.csv")
+
+ggplot(pred_wiener, aes(x = rt, fill = emp_pre)) + 
+   geom_density(alpha = 0.25) + 
+   facet_grid(nD~targ) +
+   coord_cartesian(xlim = c(0, 2))
+
+pred_wiener %>% group_by(obs, targ, type, nD, emp_pre) %>%
+  summarise(median_rt = median(rt), .groups = "drop") %>%
+  pivot_wider(names_from = "emp_pre", values_from = "median_rt") %>%
+  ggplot(aes(x = prediction, y = empirical, colour = type)) + 
+  geom_abline(linetype = 2) +
+  geom_point(alpha = 0.5) + 
+  coord_fixed() + 
+  scale_colour_manual(values = c("#228833", "#EE6677")) +
+  facet_wrap(~targ) +
+  theme(legend.position = "none") -> plt_rt
+
+
+pred_wiener %>% group_by(obs, targ, type, nD, emp_pre) %>%
+  summarise(accuracy = mean(accuracy), .groups = "drop") %>%
+  pivot_wider(names_from = "emp_pre", values_from = "accuracy") %>%
+  ggplot(aes(x = prediction, y = empirical, colour = type)) + 
+    geom_abline(linetype = 2) +
+   scale_colour_manual(values = c("#228833", "#EE6677")) +
+  facet_wrap(~targ) +
+  coord_fixed(xlim = c(0.75, 1), ylim = c(0.75, 1)) + 
+  geom_jitter(alpha = 0.25, height = 0.01)  +
+  theme(legend.position = "none") -> plt_acc
+
+plt_acc / plt_rt
+
+ggsave("../manuscript/figs/exp_lvl_3_pred.pdf", height = 6, width = 5)
+```
+
+
+```{r}
+m %>% gather_draws(`cor.*`, regex = TRUE) %>%
+  rename(var = ".variable") %>%
+  mutate(var = str_remove(var, "cor_observer__")) -> cor_post 
+
+cor_post %>% group_by(var) %>%
+    summarise(p_not_zero = max(mean(.value > 0), mean(.value < 0))) %>%
+    mutate(p_not_zero = cut(p_not_zero, c(0.5, 0.8, 0.9, 0.95, 0.99, 1))) %>%
+    full_join(cor_post, by = "var") %>%
+  select(-.chain, -.iteration , -.draw) -> cp
+```
+
+## Plot Parameters
+
+```{r}
+plt_rate_fx <- plot_model_params(m, "drift rate")
+plt_rate_rn <- plt_cors(cp, "drift rate") 
+
+plt_bs_fx <- plot_model_params(m, "bs")
+plt_bs_rn <- plt_cors(cp, "bs") 
+
+plt_bias_fx <- plot_model_params(m, "bias")
+plt_bias_rn <- plt_cors(cp, "bias") 
+```
+
+```{r, fig.width=10}
+(plt_rate_fx + plt_bs_fx + plt_bias_fx) / (plt_rate_rn + theme(legend.position = "none") + plt_bs_rn + plt_bias_rn)  + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+ggsave("model_output.png", width = 10, height = 5)
+```

@@ -88,13 +88,19 @@ data {
   vector[N] Z_1_4;
   vector[N] Z_1_5;
   vector[N] Z_1_6;
-  vector[N] Z_1_bs_7;
-  vector[N] Z_1_bs_8;
-  vector[N] Z_1_bs_9;
-  vector[N] Z_1_ndt_10;
-  vector[N] Z_1_bias_11;
-  vector[N] Z_1_bias_12;
-  vector[N] Z_1_bias_13;
+  vector[N] Z_1_7;
+  vector[N] Z_1_8;
+  vector[N] Z_1_9;
+  vector[N] Z_1_10;
+  vector[N] Z_1_11;
+  vector[N] Z_1_12;
+  vector[N] Z_1_bs_13;
+  vector[N] Z_1_bs_14;
+  vector[N] Z_1_bs_15;
+  vector[N] Z_1_ndt_16;
+  vector[N] Z_1_bias_17;
+  vector[N] Z_1_bias_18;
+  vector[N] Z_1_bias_19;
   int<lower=1> NC_1;  // number of group-level correlations
   int prior_only;  // should the likelihood be ignored?
 }
@@ -119,13 +125,19 @@ transformed parameters {
   vector[N_1] r_1_4;
   vector[N_1] r_1_5;
   vector[N_1] r_1_6;
-  vector[N_1] r_1_bs_7;
-  vector[N_1] r_1_bs_8;
-  vector[N_1] r_1_bs_9;
-  vector[N_1] r_1_ndt_10;
-  vector[N_1] r_1_bias_11;
-  vector[N_1] r_1_bias_12;
-  vector[N_1] r_1_bias_13;
+  vector[N_1] r_1_7;
+  vector[N_1] r_1_8;
+  vector[N_1] r_1_9;
+  vector[N_1] r_1_10;
+  vector[N_1] r_1_11;
+  vector[N_1] r_1_12;
+  vector[N_1] r_1_bs_13;
+  vector[N_1] r_1_bs_14;
+  vector[N_1] r_1_bs_15;
+  vector[N_1] r_1_ndt_16;
+  vector[N_1] r_1_bias_17;
+  vector[N_1] r_1_bias_18;
+  vector[N_1] r_1_bias_19;
   // compute actual group-level effects
   r_1 = scale_r_cor(z_1, sd_1, L_1);
   r_1_1 = r_1[, 1];
@@ -134,13 +146,19 @@ transformed parameters {
   r_1_4 = r_1[, 4];
   r_1_5 = r_1[, 5];
   r_1_6 = r_1[, 6];
-  r_1_bs_7 = r_1[, 7];
-  r_1_bs_8 = r_1[, 8];
-  r_1_bs_9 = r_1[, 9];
-  r_1_ndt_10 = r_1[, 10];
-  r_1_bias_11 = r_1[, 11];
-  r_1_bias_12 = r_1[, 12];
-  r_1_bias_13 = r_1[, 13];
+  r_1_7 = r_1[, 7];
+  r_1_8 = r_1[, 8];
+  r_1_9 = r_1[, 9];
+  r_1_10 = r_1[, 10];
+  r_1_11 = r_1[, 11];
+  r_1_12 = r_1[, 12];
+  r_1_bs_13 = r_1[, 13];
+  r_1_bs_14 = r_1[, 14];
+  r_1_bs_15 = r_1[, 15];
+  r_1_ndt_16 = r_1[, 16];
+  r_1_bias_17 = r_1[, 17];
+  r_1_bias_18 = r_1[, 18];
+  r_1_bias_19 = r_1[, 19];
 }
 model {
   // likelihood including all constants
@@ -155,19 +173,19 @@ model {
     vector[N] bias = X_bias * b_bias;
     for (n in 1:N) {
       // add more terms to the linear predictor
-      mu[n] += r_1_1[J_1[n]] * Z_1_1[n] + r_1_2[J_1[n]] * Z_1_2[n] + r_1_3[J_1[n]] * Z_1_3[n] + r_1_4[J_1[n]] * Z_1_4[n] + r_1_5[J_1[n]] * Z_1_5[n] + r_1_6[J_1[n]] * Z_1_6[n];
+      mu[n] += r_1_1[J_1[n]] * Z_1_1[n] + r_1_2[J_1[n]] * Z_1_2[n] + r_1_3[J_1[n]] * Z_1_3[n] + r_1_4[J_1[n]] * Z_1_4[n] + r_1_5[J_1[n]] * Z_1_5[n] + r_1_6[J_1[n]] * Z_1_6[n] + r_1_7[J_1[n]] * Z_1_7[n] + r_1_8[J_1[n]] * Z_1_8[n] + r_1_9[J_1[n]] * Z_1_9[n] + r_1_10[J_1[n]] * Z_1_10[n] + r_1_11[J_1[n]] * Z_1_11[n] + r_1_12[J_1[n]] * Z_1_12[n];
     }
     for (n in 1:N) {
       // add more terms to the linear predictor
-      bs[n] += r_1_bs_7[J_1[n]] * Z_1_bs_7[n] + r_1_bs_8[J_1[n]] * Z_1_bs_8[n] + r_1_bs_9[J_1[n]] * Z_1_bs_9[n];
+      bs[n] += r_1_bs_13[J_1[n]] * Z_1_bs_13[n] + r_1_bs_14[J_1[n]] * Z_1_bs_14[n] + r_1_bs_15[J_1[n]] * Z_1_bs_15[n];
     }
     for (n in 1:N) {
       // add more terms to the linear predictor
-      ndt[n] += r_1_ndt_10[J_1[n]] * Z_1_ndt_10[n];
+      ndt[n] += r_1_ndt_16[J_1[n]] * Z_1_ndt_16[n];
     }
     for (n in 1:N) {
       // add more terms to the linear predictor
-      bias[n] += r_1_bias_11[J_1[n]] * Z_1_bias_11[n] + r_1_bias_12[J_1[n]] * Z_1_bias_12[n] + r_1_bias_13[J_1[n]] * Z_1_bias_13[n];
+      bias[n] += r_1_bias_17[J_1[n]] * Z_1_bias_17[n] + r_1_bias_18[J_1[n]] * Z_1_bias_18[n] + r_1_bias_19[J_1[n]] * Z_1_bias_19[n];
     }
     for (n in 1:N) {
       // apply the inverse link function
@@ -200,13 +218,25 @@ model {
     - 1 * student_t_lccdf(0 | 3, 0, 2.5);
   target += student_t_lpdf(sd_1[9] | 3, 0, 2.5)
     - 1 * student_t_lccdf(0 | 3, 0, 2.5);
-  target += normal_lpdf(sd_1[10] | 0, 0.01)
-    - 1 * normal_lccdf(0 | 0, 0.01);
+  target += student_t_lpdf(sd_1[10] | 3, 0, 2.5)
+    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
   target += student_t_lpdf(sd_1[11] | 3, 0, 2.5)
     - 1 * student_t_lccdf(0 | 3, 0, 2.5);
   target += student_t_lpdf(sd_1[12] | 3, 0, 2.5)
     - 1 * student_t_lccdf(0 | 3, 0, 2.5);
   target += student_t_lpdf(sd_1[13] | 3, 0, 2.5)
+    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
+  target += student_t_lpdf(sd_1[14] | 3, 0, 2.5)
+    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
+  target += student_t_lpdf(sd_1[15] | 3, 0, 2.5)
+    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
+  target += normal_lpdf(sd_1[16] | 0, 0.01)
+    - 1 * normal_lccdf(0 | 0, 0.01);
+  target += student_t_lpdf(sd_1[17] | 3, 0, 2.5)
+    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
+  target += student_t_lpdf(sd_1[18] | 3, 0, 2.5)
+    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
+  target += student_t_lpdf(sd_1[19] | 3, 0, 2.5)
     - 1 * student_t_lccdf(0 | 3, 0, 2.5);
   target += std_normal_lpdf(to_vector(z_1));
   target += lkj_corr_cholesky_lpdf(L_1 | 1);
@@ -224,60 +254,52 @@ generated quantities {
     }
   }
 }
-List of 29
- $ N          : int 12567
- $ Y          : num [1:12567(1d)] 5.03 3.43 3.21 3.05 4.42 ...
- $ dec        : num [1:12567(1d)] 0 0 0 0 0 1 0 0 0 0 ...
+List of 35
+ $ N          : int 11541
+ $ Y          : num [1:11541(1d)] 5.03 3.43 3.21 3.05 4.42 ...
+ $ dec        : num [1:11541(1d)] 0 0 0 0 0 1 0 0 0 0 ...
  $ K          : int 12
- $ X          : num [1:12567, 1:12] 1 1 1 1 0 0 1 1 1 1 ...
- $ Z_1_1      : num [1:12567(1d)] 2 1 1 2 0 0 1 1 3 1 ...
- $ Z_1_2      : num [1:12567(1d)] 0 0 0 0 3 3 0 0 0 0 ...
- $ Z_1_3      : num [1:12567(1d)] 0 0 0 0 0 0 0 0 0 0 ...
- $ Z_1_4      : num [1:12567(1d)] 0 0 0 0 0 0 0 0 0 0 ...
- $ Z_1_5      : num [1:12567(1d)] 0 0 0 0 0 0 0 0 0 0 ...
- $ Z_1_6      : num [1:12567(1d)] 0 0 0 0 0 0 0 0 0 0 ...
+ $ X          : num [1:11541, 1:12] 1 1 1 1 0 0 1 1 1 1 ...
+ $ Z_1_1      : num [1:11541(1d)] 1 1 1 1 0 0 1 1 1 1 ...
+ $ Z_1_2      : num [1:11541(1d)] 0 0 0 0 1 1 0 0 0 0 ...
+ $ Z_1_3      : num [1:11541(1d)] 0 0 0 0 0 0 0 0 0 0 ...
+ $ Z_1_4      : num [1:11541(1d)] 0 0 0 0 0 0 0 0 0 0 ...
+ $ Z_1_5      : num [1:11541(1d)] 0 0 0 0 0 0 0 0 0 0 ...
+ $ Z_1_6      : num [1:11541(1d)] 0 0 0 0 0 0 0 0 0 0 ...
+ $ Z_1_7      : num [1:11541(1d)] 2 1 1 2 0 0 1 1 3 1 ...
+ $ Z_1_8      : num [1:11541(1d)] 0 0 0 0 3 3 0 0 0 0 ...
+ $ Z_1_9      : num [1:11541(1d)] 0 0 0 0 0 0 0 0 0 0 ...
+ $ Z_1_10     : num [1:11541(1d)] 0 0 0 0 0 0 0 0 0 0 ...
+ $ Z_1_11     : num [1:11541(1d)] 0 0 0 0 0 0 0 0 0 0 ...
+ $ Z_1_12     : num [1:11541(1d)] 0 0 0 0 0 0 0 0 0 0 ...
  $ K_bs       : int 3
- $ X_bs       : num [1:12567, 1:3] 1 1 1 1 1 1 1 1 1 1 ...
- $ Z_1_bs_7   : num [1:12567(1d)] 1 1 1 1 1 1 1 1 1 1 ...
- $ Z_1_bs_8   : num [1:12567(1d)] 0 0 0 0 0 0 0 0 0 0 ...
- $ Z_1_bs_9   : num [1:12567(1d)] 0 0 0 0 0 0 0 0 0 0 ...
+ $ X_bs       : num [1:11541, 1:3] 1 1 1 1 1 1 1 1 1 1 ...
+ $ Z_1_bs_13  : num [1:11541(1d)] 1 1 1 1 1 1 1 1 1 1 ...
+ $ Z_1_bs_14  : num [1:11541(1d)] 0 0 0 0 0 0 0 0 0 0 ...
+ $ Z_1_bs_15  : num [1:11541(1d)] 0 0 0 0 0 0 0 0 0 0 ...
  $ K_ndt      : int 1
- $ X_ndt      : num [1:12567, 1] 1 1 1 1 1 1 1 1 1 1 ...
- $ Z_1_ndt_10 : num [1:12567(1d)] 1 1 1 1 1 1 1 1 1 1 ...
+ $ X_ndt      : num [1:11541, 1] 1 1 1 1 1 1 1 1 1 1 ...
+ $ Z_1_ndt_16 : num [1:11541(1d)] 1 1 1 1 1 1 1 1 1 1 ...
  $ K_bias     : int 3
- $ X_bias     : num [1:12567, 1:3] 1 1 1 1 1 1 1 1 1 1 ...
- $ Z_1_bias_11: num [1:12567(1d)] 1 1 1 1 1 1 1 1 1 1 ...
- $ Z_1_bias_12: num [1:12567(1d)] 0 0 0 0 0 0 0 0 0 0 ...
- $ Z_1_bias_13: num [1:12567(1d)] 0 0 0 0 0 0 0 0 0 0 ...
- $ J_1        : int [1:12567(1d)] 1 1 1 1 1 1 1 1 1 1 ...
+ $ X_bias     : num [1:11541, 1:3] 1 1 1 1 1 1 1 1 1 1 ...
+ $ Z_1_bias_17: num [1:11541(1d)] 1 1 1 1 1 1 1 1 1 1 ...
+ $ Z_1_bias_18: num [1:11541(1d)] 0 0 0 0 0 0 0 0 0 0 ...
+ $ Z_1_bias_19: num [1:11541(1d)] 0 0 0 0 0 0 0 0 0 0 ...
+ $ J_1        : int [1:11541(1d)] 1 1 1 1 1 1 1 1 1 1 ...
  $ N_1        : int 28
- $ M_1        : int 13
- $ NC_1       : int 78
+ $ M_1        : int 19
+ $ NC_1       : int 171
  $ prior_only : int 0
 Compiling Stan program...
 Start sampling
 
-SAMPLING FOR MODEL '10824176ab98b689ea0000b9c9a0de43' NOW (CHAIN 1).
+SAMPLING FOR MODEL '358de9a9c757080f631393d8366d26a6' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 0.22 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2200 seconds.
+Chain 1: Gradient evaluation took 0.11 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1100 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
 Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
 Chain 1: Iteration:  200 / 2000 [ 10%]  (Warmup)
 Chain 1: Iteration:  400 / 2000 [ 20%]  (Warmup)
-Chain 1: Iteration:  600 / 2000 [ 30%]  (Warmup)
-Chain 1: Iteration:  800 / 2000 [ 40%]  (Warmup)
-Chain 1: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-Chain 1: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-Chain 1: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-Chain 1: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
-Chain 1: 
-Chain 1:  Elapsed Time: 22770 seconds (Warm-up)
-Chain 1:                16583.5 seconds (Sampling)
-Chain 1:                39353.4 seconds (Total)
-Chain 1: 

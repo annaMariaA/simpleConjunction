@@ -18,9 +18,6 @@ d$response[which(d$targ=="absent" & d$accuracy==0)] = 1
 
 summary(d)
 
-# remove some outliers
-d <- filter(d, rt > 0.2, rt < 20)
-
 
 fit_wiener <- readRDS("models/wiener_fit.model")
 
@@ -38,10 +35,8 @@ paradigms <- "(tex|ori|conj)"
 vars <- c("targpresent:trial", "targabsent:trial", 
           "bias_trial", "bs_trial" )
 
-
 comparison_intercepts <-  paste(vars, paradigms, "__", vars, paradigms, sep = "")
 comparison_slopes <-   paste(vars, paradigms, ":difficulty__", vars, paradigms, ":difficulty", sep = "")
-
 
 # intercepts
 
@@ -49,8 +44,7 @@ plt_cors <- function(comps, slopes = FALSE) {
   
   cor_post %>% group_by(var) %>%
     summarise(p_not_zero = max(mean(.value > 0), mean(.value < 0))) %>%
-    mutate(p_not_zero = round(p_not_zero, 1),
-           p_not_zero = as.factor(p_not_zero)) %>%
+    mutate(p_not_zero = cut(p_not_zero, c(0.5, 0.8, 0.9, 0.95, 0.99, 1))) %>%
     full_join(cor_post) -> cp
   
   if (slopes) {
@@ -77,7 +71,7 @@ plt_cors <- function(comps, slopes = FALSE) {
     geom_vline(xintercept = 0, linetype = 2) + 
     ggridges::geom_density_ridges(alpha = 0.5) +
     facet_wrap(~comparison) + 
-    scale_fill_viridis_d("prob >< 0") +
+    scale_fill_viridis_d("prob >< 0", drop=FALSE) +
     scale_x_continuous("estimated correlation coefficent") +
     theme_bw() + 
     theme(axis.title.y = element_blank())
@@ -133,17 +127,17 @@ fit_wiener %>% gather_draws(`r_observer\\[.*`, regex = TRUE) %>%
   group_by(targ, trial, param, participant) %>%
   summarise(value = mean(.value), .groups = "drop") %>%
   pivot_wider(names_from = param, values_from = "value") %>%
-  rename(z_slo = "difficulty") %>%
+  rename(z_slo = "difficulty", z_int = "intercept") %>%
   left_join(rate_samples %>% group_by(targ,trial) %>%
               summarise(intercept = mean(intercept),
                         slope = mean(slope))) %>%
-  mutate(slope = slope + z_slo) %>% #  intercept =  intercept + z_int
+  mutate(slope = slope + z_slo,
+         intercept =  intercept + z_int) %>% #  
   select(targ, trial, participant, intercept, slope) -> rate_participants
 
 rates <- bind_rows(
   rate_samples %>% mutate(participant = "fixd"), 
   rate_participants)
-
 
 map_dfr(1:nrow(rates), linear_pred, rates) -> r
 
@@ -163,8 +157,7 @@ ggplot(r, aes(x = x, y = rate, fill = targ)) +
 
 
 plt_rate / plt_cor / plt_int + plot_layout(guides = "collect")
-
-ggsave("rate_param.pdf", width = 6, height = 10)
+ggsave("figs/rate_param.pdf", width = 6, height = 10)
 rm(rate_samples)
 
 
@@ -180,9 +173,14 @@ fit_wiener %>% gather_draws(`b.*`, regex = TRUE) %>%
   geom_density(alpha = 0.44) + 
   facet_wrap(~param, scales = "free") +
   ggthemes::scale_fill_fivethirtyeight() + 
-  theme_bw()
+  theme_bw() -> plt_boundary
 
 
+plt_int <- plt_cors(comparison_intercepts[str_detect(comparison_intercepts, "(bias_|bs_)")]) +
+  ggtitle("correlation of observer bias and boundary seperations") 
+
+plt_boundary / plt_int + plot_layout(guides = "collect")
+ggsave("figs/boundary_param.pdf", width = 6, height = 8)
 
 
 #### plot predicted rt and acc against empirical values
@@ -192,14 +190,12 @@ pred_wiener <- predict(fit_wiener,
                        negative_rt = TRUE, 
                        nsamples = NPRED,
                        re_formula = NULL)
-d$p <- as.numeric(colMeans(pred_wiener))
+d$p_rt <- as.numeric(colMeans(abs(pred_wiener)))
+d$p_ac <- colMeans((pred_wiener>0))
+d$p_ac[which(d$targ == "absent")] <- 1 - d$p_ac[which(d$targ == "absent")]
 rm(pred_wiener)
 
-## plot accuracy
-d %>% mutate(
-  p_rt = if_else(targ == "absent", -p, p),
-  p_re = if_else(p < 0, 0, 1),
-  p_ac = if_else((targ=="present")==p_re, 1, 0)) -> d
+
 
 d %>%
   group_by(observer, trial, targ, difficulty) %>%
@@ -208,12 +204,13 @@ d %>%
     pred_acc = mean(p_ac)) %>%
   ggplot(aes(x = pred_acc, y = accuracy, colour = difficulty)) +
   geom_abline(linetype = 2) + 
-  geom_jitter(alpha = 0.5, position = "jitter") +
+  geom_jitter(alpha = 0.75, position = "jitter") +
   geom_smooth(method = "lm", aes(group = 1), colour = "grey") + 
   facet_grid(targ~trial) +
-  ggthemes::scale_colour_ptol() +
-  coord_fixed() 
-ggsave("model_pred_acc.png", height = 4, width = 6)
+  scale_colour_viridis_d(end = 0.7) + 
+  scale_x_continuous(breaks = c(0, 0.5, 1)) +
+  scale_y_continuous(breaks = c(0, 0.5, 1)) +
+  coord_fixed() -> plt_acc
 
 
 ## plot rt
@@ -228,10 +225,12 @@ d %>% filter(p_ac == 1)  %>%
 full_join(ed, pd) %>%
   ggplot(aes(x = model, y = empirical, colour = difficulty)) +
   geom_abline(linetype = 2) + 
-  geom_point(alpha = 0.5) +
+  geom_point(alpha = 0.75) +
   facet_grid(targ~trial) +
   coord_fixed() + 
-  ggthemes::scale_colour_ptol() 
-ggsave("model_pred_rt.png", height = 4, width = 6)
+  scale_colour_viridis_d(end = 0.7) -> plt_rt
+
+plt_acc / plt_rt + plot_layout(guides = "collect")
+ggsave("figs/model_pred.png", height = 8, width = 6)
 
 

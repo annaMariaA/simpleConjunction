@@ -22,7 +22,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Import Data
 
-Data froms from proficio (data Anna?) and Naa Cato (Alasdair's MSc student) 
+Data  from prolific (data Anna?) and Naa Cato (Alasdair's MSc student) 
 
 ```{r echo=FALSE}
 my_cols <- cols(
