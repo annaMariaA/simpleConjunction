@@ -4,13 +4,25 @@ plt_cors <- function(cp, param_to_plot) {
  
   if (param_to_plot == "drift rate") {
     
-    cp %>% filter(!str_detect(var, "(_bs_|_bias_|_ndt_)")) %>%
+    cp %>% filter(!str_detect(var, "(_bs_|_bias_|_ndt_)"), str_detect(var, ":nD.+:nD")) %>%
       separate(var, 
-               into = c("cor", "obs", "targ1", "paradigm1",  "targ2", "paradigm2")) %>%
+               into = c("cor", "obs", "targ1", "paradigm1", NA, "targ2", "paradigm2", NA)) %>%
       filter(targ1 == targ2) %>%
-      mutate(target =  str_remove_all(targ1, "targ")) -> cp
+      mutate(target =  str_remove_all(targ1, "targ"),
+             paradigm1 = paste0(paradigm1, ":nD"),
+             paradigm2 = paste0(paradigm1, ":nD")) -> cp_slopes
+    
+    cp %>% filter(!str_detect(var, "(_bs_|_bias_|_ndt_)"), !str_detect(var, ":nD")) %>%
+      separate(var, 
+               into = c("cor", "obs", "targ1", "paradigm1", "targ2", "paradigm2")) %>%
+      filter(targ1 == targ2) %>%
+      mutate(target =  str_remove_all(targ1, "targ")) -> cp_intercepts
+    
+    cp <- bind_rows(cp_slopes, cp_intercepts)
+    rm(cp_slopes, cp_intercepts)
     
   } else{
+    
     str_to_match <- paste0("_", param_to_plot, ".*_", param_to_plot)
     cp %>% filter(str_detect(var, str_to_match )) %>%
       separate(var, 
