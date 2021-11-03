@@ -27,7 +27,6 @@ Data  from prolific (data Anna?) and Naa Cato (Alasdair's MSc student)
 ```{r echo=FALSE}
 my_cols <- cols(
   observer = col_character(),
-  data_from = col_character(),
   trial = col_character(),
   difficulty = col_character(),
   targ = col_character(),
@@ -37,38 +36,32 @@ my_cols <- cols(
 ```
 
 ```{r}
-d <- read_csv("../pilot_data/pilot_data.csv", col_types = my_cols) %>%
+d <- read_csv("../pilot_data/pilot_data.txt", col_types = my_cols) %>%
   glimpse() %>%
   mutate(difficulty = as_factor(difficulty),
-         difficulty = fct_relevel(difficulty, "easy", "mid", "hard"))
+         difficulty = fct_relevel(difficulty, "easy", "mid", "hard")) %>%
+  rename(targ = "targPresent", trial = "targetType")
 ```
 
 ## Check Summary Stats Between Sites
 
 ### Accuracy
 
-From looking at the accuracy data, Naa's data looks similar to our other pilot data so no reason not to merge.
-
 ```{r}
-d %>% group_by(observer, data_from) %>%
+d %>% group_by(observer) %>%
   summarise(accuracy = mean(accuracy), .groups = "drop") %>%
-  ggplot(aes(x = observer, y = accuracy, fill = data_from)) + 
+  ggplot(aes(x = observer, y = accuracy)) + 
   geom_col() + 
   theme(legend.position = "bottom",
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
   ggthemes::scale_fill_pander() 
 ```
 
-Observer 3's overall accuracy is at chance level, so I suggest we remove
-
-```{r}
-d <- filter(d, observer != "obs3")
-```
 
 Now check how people look in the easy condition across tasks. 
 
 ```{r}
-d %>% filter(targ == "absent", difficulty == "easy") %>%
+d %>% filter(targ == 0, difficulty == "easy") %>%
   group_by(observer, difficulty, trial) %>%
   summarise(accuracy = mean(accuracy), .groups = "drop") %>%
   ggplot(aes(x = observer, y = accuracy)) + 
@@ -82,7 +75,7 @@ d %>% filter(targ == "absent", difficulty == "easy") %>%
 Suggested exclusion rule: anybody who scores less than 75% in any one of the three target absent (easy difficulty) conditions. 
 
 ```{r}
-d %>% filter(targ == "absent", difficulty == "easy") %>%
+d %>% filter(targ == 0, difficulty == "easy") %>%
   group_by(observer, difficulty, trial) %>%
   summarise(accuracy = mean(accuracy), .groups = "drop") %>%
   filter(accuracy < 0.75) %>%
@@ -101,10 +94,10 @@ Now we will check that RTs are broadly similar across sites. Remember to only ta
 
 ```{r}
 d %>% filter(accuracy == 1) %>%
-  group_by(observer, data_from, trial, targ, difficulty) %>%
+  group_by(observer, trial, targ, difficulty) %>%
   summarise(med_rt = median(rt), .groups = "drop") %>%
   mutate(difficulty = as.numeric(difficulty)) %>%
-  ggplot(aes(x = difficulty, y = med_rt, colour = data_from)) + 
+  ggplot(aes(x = difficulty, y = med_rt)) + 
   geom_jitter(height = 0) + 
   facet_grid(targ~trial) + 
   ggthemes::scale_color_pander()

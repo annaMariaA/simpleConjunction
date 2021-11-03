@@ -175,6 +175,13 @@ drt %>% group_by(obs, type) %>%
 ggsave("../manuscript/figs/exp_lvl_3_emp.pdf", height = 6, width = 9)
 
 
+d %>% group_by(obs, type, targ) %>% 
+  summarise(rt = median(rt)) %>%
+  filter(targ == "absent") %>% 
+  pivot_wider(values_from = "rt", names_from = "type") -> d2
+
+cor.test(d2$greenVertical, d2$redHorizontal)
+
 ```
 
 
@@ -215,99 +222,7 @@ ggplot(pred_wiener, aes(x = rt, fill = emp_pre)) +
 pred_wiener %>% group_by(obs, targ, type, nD, emp_pre) %>%
   summarise(median_rt = median(rt), .groups = "drop") %>%
   pivot_wider(names_from = "emp_pre", values_from = "median_rt") %>%
-  ggplot(aes(x = prediction, y = empirical, colour = type)) + 
-  geom_abline(linetype = 2) +
-  geom_point(alpha = 0.5) + 
-  coord_fixed() + 
-  scale_colour_manual(values = c("#228833", "#EE6677")) +
-  facet_wrap(~targ) +
-  theme(legend.position = "none") -> plt_rt
-
-
-pred_wiener %>% group_by(obs, targ, type, nD, emp_pre) %>%
-  summarise(accuracy = mean(accuracy), .groups = "drop") %>%
-  pivot_wider(names_from = "emp_pre", values_from = "accuracy") %>%
-  ggplot(aes(x = prediction, y = empirical, colour = type)) + 
-    geom_abline(linetype = 2) +
-   scale_colour_manual(values = c("#228833", "#EE6677")) +
-  facet_wrap(~targ) +
-  coord_fixed(xlim = c(0.75, 1), ylim = c(0.75, 1)) + 
-  geom_jitter(alpha = 0.25, height = 0.01)  +
-  theme(legend.position = "none") -> plt_acc
-
-plt_acc / plt_rt
-
-ggsave("../manuscript/figs/exp_lvl_3_pred.pdf", height = 6, width = 5)
-```
-
-
-```{r}
-m %>% gather_draws(`cor.*`, regex = TRUE) %>%
-  rename(var = ".variable") %>%
-  mutate(var = str_remove(var, "cor_observer__")) -> cor_post 
-
-cor_post %>% group_by(var) %>%
-    summarise(p_not_zero = max(mean(.value > 0), mean(.value < 0))) %>%
-    mutate(p_not_zero = cut(p_not_zero, c(0.5, 0.8, 0.9, 0.95, 0.99, 1))) %>%
-    full_join(cor_post, by = "var") %>%
-  select(-.chain, -.iteration , -.draw) -> cp
-```
-
-## Plot Parameters
-
-```{r}
-plt_rate_fx <- plot_model_params(m, "drift rate")
-plt_rate_rn <- plt_cors(cp, "drift rate") 
-
-plt_bs_fx <- plot_model_params(m, "bs")
-plt_bs_rn <- plt_cors(cp, "bs") 
-
-plt_bias_fx <- plot_model_params(m, "bias")
-plt_bias_rn <- plt_cors(cp, "bias") 
-```
-
-```{r, fig.width=10}
-(plt_rate_fx + plt_bs_fx + plt_bias_fx) / (plt_rate_rn + theme(legend.position = "none") + plt_bs_rn + plt_bias_rn)  + plot_layout(guides = "collect") & theme(legend.position = "bottom")
-ggsave("model_output.png", width = 10, height = 5)
-```
-
-
-# Model 2 (reduced)
-
-
-```{r}
-m <- readRDS("models/level3_redu.model")
-```
-
-
-
-
-## Posterior Predections
-
-```{r}
-# d %>%
-#   mutate(obs = as.factor(obs),
-#          nD = nD/max(nD)) -> d
-
-# pred_wiener <- d %>% add_predicted_draws(m,negative_rt = TRUE, n = 100) %>%
-#   ungroup() %>%
-#   select(-.chain, -.draw, -.iteration, -.row) %>%
-#   mutate(rt = if_else(response == 1, rt, -rt)) %>%
-#   pivot_longer(c(rt, .prediction), names_to = "emp_pre", values_to = "rt") %>%
-#   select(-response, -accuracy) %>%
-#   mutate(emp_pre = fct_recode(emp_pre, empirical = "rt", prediction = ".prediction"),
-#                               response = if_else(rt < 0, "absent", "present"),
-#                               response = as_factor(response),
-#                               accuracy = response == targ,
-#                               rt = abs(rt))
-# write_csv(pred_wiener, "predictions_redu.csv")
-
-pred_wiener <- read_csv("predictions_redu.csv")
-
-ggplot(pred_wiener, aes(x = rt, fill = emp_pre)) + 
-   geom_density(alpha = 0.25) + 
-   facet_grid(nD~targ) +
-   coord_cartesian(xlim = c(0, 2))
+  mutate(abserr = abs(empirical - prediction)) -> dabserrt
 
 pred_wiener %>% group_by(obs, targ, type, nD, emp_pre) %>%
   summarise(median_rt = median(rt), .groups = "drop") %>%
@@ -318,8 +233,15 @@ pred_wiener %>% group_by(obs, targ, type, nD, emp_pre) %>%
   coord_fixed() + 
   scale_colour_manual(values = c("#228833", "#EE6677")) +
   facet_wrap(~targ) +
-  theme(legend.position = "none") -> plt_rt
+  theme(legend.position = "none") +
+  ggtitle(paste("mean absoute error = ", round(mean(dabserrt$abserr),3), " seconds", sep="")) -> plt_rt
 
+
+
+pred_wiener %>% group_by(obs, targ, type, nD, emp_pre) %>%
+  summarise(accuracy = mean(accuracy), .groups = "drop") %>%
+  pivot_wider(names_from = "emp_pre", values_from = "accuracy") %>%
+  mutate(abserr = abs(empirical - prediction)) -> dabserr
 
 pred_wiener %>% group_by(obs, targ, type, nD, emp_pre) %>%
   summarise(accuracy = mean(accuracy), .groups = "drop") %>%
@@ -328,9 +250,11 @@ pred_wiener %>% group_by(obs, targ, type, nD, emp_pre) %>%
     geom_abline(linetype = 2) +
    scale_colour_manual(values = c("#228833", "#EE6677")) +
   facet_wrap(~targ) +
-  coord_fixed(xlim = c(0.75, 1), ylim = c(0.75, 1)) + 
+  coord_fixed(xlim = c(0.5, 1), ylim = c(0.5, 1)) + 
   geom_jitter(alpha = 0.25, height = 0.01)  +
-  theme(legend.position = "none") -> plt_acc
+  theme(legend.position = "none") +
+  ggtitle(paste("mean absoute error = ", round(100*mean(dabserr$abserr),1), "%", sep="")) -> plt_acc
+
 
 plt_acc / plt_rt
 
@@ -364,6 +288,23 @@ plt_bias_rn <- plt_cors(cp, "bias")
 ```
 
 ```{r, fig.width=10}
-(plt_rate_fx + plt_bs_fx + plt_bias_fx) / (plt_rate_rn + theme(legend.position = "none") + plt_bs_rn + plt_bias_rn)  + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+(plt_rate_fx + plt_bs_fx + plt_bias_fx) / (plt_rate_rn + theme(legend.position = "none") + plt_bs_rn + plt_bias_rn)  + plot_layout(guides = "collect") & theme(legend.position = "none")
 ggsave("model_output.png", width = 10, height = 5)
 ```
+
+
+Make a table:
+
+```{r}
+cp_bs <- get_cor_data(cp, "bs")
+cp_dr <- get_cor_data(cp, "drift rate")
+cp_bias <- get_cor_data(cp, "bias")
+    
+bind_rows(cp_dr, cp_bs, cp_bias) %>%
+  group_by( param, slope, targ1) %>%
+  median_hdci(.value) %>%
+  knitr::kable()
+    
+```
+
+

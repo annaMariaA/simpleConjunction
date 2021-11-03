@@ -57,7 +57,7 @@ Before fitting the model to the data, we carried out the following pre-processin
 
 After applying these criteria, we were left with 23,168 trials from a total of 58 observers. 
 
-Accuracy data is shown in Figure \ref{fig:lvl3_emp}. The Bayesian $R^2 = 0.13$, 05\% HPDI = $[0.011, 0.29]$. Same something about range restriction.
+Accuracy data is shown in Figure \ref{fig:lvl3_emp}. The Bayesian $R^2 = 0.13$, 95\% HPDI = $[0.011, 0.29]$, i.e, Pearson's correlation coefficient $r = 0.36$.
 
 \begin{figure*}
 \centering
@@ -69,7 +69,6 @@ Accuracy data is shown in Figure \ref{fig:lvl3_emp}. The Bayesian $R^2 = 0.13$, 
 We now look briefly at the reaction times for correct trials. 
 
 \subsection{Modelling}
-
 
 The DDM model was fit using \texttt{R} (v x.xxx) and the \texttt{brms} package (v x.xxx) with the model formula given below:
 
@@ -85,7 +84,7 @@ Before analysing the results, we verified that all $R\hat < 1.01$ and $n_eff>500
 
 \subsection{Posterior Predictions}
 
-First things first, we check how well the model fits the training data.
+First things first, we check how well the model fits the training data \ref{fig:lvl3_pred}. While we can see a good correspondance between predicted and observed RTs, the relationship with accuracy is a little less clear. This is likely to be partially due to range restriction, as we can see that both observed and predicted accuracy is close to ceiling (100\%). 
 
 \begin{figure}
 \centering
@@ -94,7 +93,32 @@ First things first, we check how well the model fits the training data.
 \label{fig:lvl3_pred}
 \end{figure}
 
-\subsection{Paramter Estimates and Correlation Structure}
+\subsection{Parameter Estimates and Correlation Structure}
+
+Posterior probability distributions, and the correlations between conditions, are shown in Figure \ref{fig:lvl3_params}. We find that increasing the number of distractors leads to increasing boundary separation, i.e., observers require more evidence to reach a decision. Reassuringly, we find correlations between parameters in the red-horizontal and green-vertical conditions. s
+
+\begin{figure*}
+\centering
+\includegraphics[width=\linewidth]{figs/exp_lvl_3_model_params.pdf}
+\caption{(\textit{top}) Parameter estimates for drift rate, boundary separation and bias. (\textit{bottom}) Posterior probability distributions for the correlation between parameters in different conditions.}
+\label{fig:lvl3_params}
+\end{figure*}
+
+
+\begin{table}[]
+\begin{tabular}{rl|ccc}
+\textit{param}               &                & \textit{lower} & \textit{median} & \textit{upper} \\
+\hline
+drift rate          & target absent  & 0.30  & 0.50   & 0.71  \\
+drift rate          & target present & 0.08  & 0.31   & 0.58  \\
+boundary sep. & intercept      & 0.56  & 0.36   & 0.73  \\
+boundary sep. & slope          & 0.28  & 0.55   & 0.81  \\
+bias                &                & 0.20  & 0.46   & 0.67  \\
+\end{tabular}
+\caption{Median and $95\%$ HPDIs for the correlations in parameter estimates between the two conditions.}
+\label{tab:lvl3}
+\end{table}
+
 
 \section{Discussion}
 

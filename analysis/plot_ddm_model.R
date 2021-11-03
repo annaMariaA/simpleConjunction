@@ -1,46 +1,7 @@
-
 plt_cors <- function(cp, param_to_plot) {
   
  
-  if (param_to_plot == "drift rate") {
-    
-    cp %>% filter(!str_detect(var, "(_bs_|_bias_|_ndt_)"), str_detect(var, ":nD.+:nD")) %>%
-      separate(var, 
-               into = c("cor", "obs", "targ1", "paradigm1", NA, "targ2", "paradigm2", NA)) %>%
-      filter(targ1 == targ2) %>%
-      mutate(target =  str_remove_all(targ1, "targ"),
-             paradigm1 = paste0(paradigm1, ":nD"),
-             paradigm2 = paste0(paradigm1, ":nD")) -> cp_slopes
-    
-    cp %>% filter(!str_detect(var, "(_bs_|_bias_|_ndt_)"), !str_detect(var, ":nD")) %>%
-      separate(var, 
-               into = c("cor", "obs", "targ1", "paradigm1", "targ2", "paradigm2")) %>%
-      filter(targ1 == targ2) %>%
-      mutate(target =  str_remove_all(targ1, "targ")) -> cp_intercepts
-    
-    cp <- bind_rows(cp_slopes, cp_intercepts)
-    rm(cp_slopes, cp_intercepts)
-    
-  } else{
-    
-    str_to_match <- paste0("_", param_to_plot, ".*_", param_to_plot)
-    cp %>% filter(str_detect(var, str_to_match )) %>%
-      separate(var, 
-               into = c("cor", "obs", "param", "paradigm1",  NA,  "paradigm2"),
-               sep = "_+") -> cp
-    rm(str_to_match)
-  }
-  
-  cp %>% filter(paradigm1 != paradigm2) %>%
-    mutate(comparison = paste(paradigm1, paradigm2)) %>%
-    mutate(comparison = str_remove_all(comparison, "type")) %>%
-    mutate(slope1 = str_detect(paradigm1, ":nD"), 
-                slope2 = str_detect(paradigm2, ":nD"),
-           comparison = str_remove_all(comparison, ":nD")) %>%
-    filter(slope1 == slope2) %>%
-    mutate(slope = slope1,
-           slope = if_else(slope, "slope", "intercept")) %>% 
-    select(-slope1, -slope2) -> cp
+  cp <- get_cor_data(cp, param_to_plot)
   
   
   if ("target" %in% names(cp)) {
@@ -61,9 +22,9 @@ plt_cors <- function(cp, param_to_plot) {
     theme(axis.title.y = element_blank(), legend.position = "bottom") 
   
   if ("slope" %in% unique(cp$slope)) {
-    plt <- plt + facet_grid(comparison ~ slope)
+    plt <- plt + facet_grid(. ~ slope)
   } else {
-    plt <- plt + facet_wrap(~comparison, nrow = 1)
+    #plt <- plt + facet_wrap(~comparison, nrow = 1)
   }
   
   return(plt)
@@ -71,6 +32,52 @@ plt_cors <- function(cp, param_to_plot) {
 }
 
 
+get_cor_data <- function(cp, param_to_plot) {
+  
+  if (param_to_plot == "drift rate") {
+    
+    cp %>% filter(!str_detect(var, "(_bs_|_bias_|_ndt_)"), str_detect(var, ":nD.+:nD")) %>%
+      separate(var, 
+               into = c("cor", "obs", "targ1", "paradigm1", NA, "targ2", "paradigm2", NA)) %>%
+      filter(targ1 == targ2) %>%
+      mutate(target =  str_remove_all(targ1, "targ"),
+             paradigm1 = paste0(paradigm1, ":nD"),
+             paradigm2 = paste0(paradigm1, ":nD")) -> cp_slopes
+    
+    cp %>% filter(!str_detect(var, "(_bs_|_bias_|_ndt_)"), !str_detect(var, ":nD")) %>%
+      separate(var, 
+               into = c("cor", "obs", "targ1", "paradigm1", "targ2", "paradigm2")) %>%
+      filter(targ1 == targ2) %>%
+      mutate(target =  str_remove_all(targ1, "targ")) -> cp_intercepts
+    
+    cp <- bind_rows(cp_slopes, cp_intercepts) %>%
+      mutate(param = "drift rate")
+    rm(cp_slopes, cp_intercepts)
+    
+  } else{
+    
+    str_to_match <- paste0("_", param_to_plot, ".*_", param_to_plot)
+    cp %>% filter(str_detect(var, str_to_match )) %>%
+      separate(var, 
+               into = c("cor", "obs", "param", "paradigm1",  NA,  "paradigm2"),
+               sep = "_+") -> cp
+    rm(str_to_match)
+  }
+  
+  cp %>% filter(paradigm1 != paradigm2) %>%
+    mutate(comparison = paste(paradigm1, paradigm2)) %>%
+    mutate(comparison = str_remove_all(comparison, "type")) %>%
+    mutate(slope1 = str_detect(paradigm1, ":nD"), 
+           slope2 = str_detect(paradigm2, ":nD"),
+           comparison = str_remove_all(comparison, ":nD")) %>%
+    filter(slope1 == slope2) %>%
+    mutate(slope = slope1,
+           slope = if_else(slope, "slope", "intercept")) %>% 
+    select(-slope1, -slope2) -> cp
+  
+  return(cp)
+  
+}
 
 plot_model_params <- function(m, param_to_plot) {
   
@@ -237,15 +244,17 @@ plot_slopes <- function(samples, samples_p, param_to_plot) {
     geom_path(data = filter(r, participant != "fixd"), 
               aes(colour = type, group = interaction(targ, type,participant)),
               alpha = 0.5, linetype = 2) -> plt
-    }
-  else {
+    }  else {
     ggplot(r, aes(x = x, y = rate, fill = type)) +
     geom_path(data = filter(r, participant != "fixd"), 
               aes(colour = type, group = interaction(type,participant)),
               alpha = 0.5, linetype = 2) -> plt
-  }
+    }
+  
   plt + geom_hline(yintercept = 0) +
-    stat_lineribbon(data = filter(r, participant == "fixd"), .width = c(0.53, 0.89, 0.97), alpha = 0.5) 
+    stat_lineribbon(data = filter(r, participant == "fixd"), 
+                    .width = c(0.53, 0.89, 0.97), 
+                    alpha = 0.5) -> plt 
     
 # 
   #  plt <- plt + facet_wrap(targ~type)
@@ -258,7 +267,8 @@ plot_slopes <- function(samples, samples_p, param_to_plot) {
     scale_x_continuous("number of distracters") +
     scale_y_continuous(param_to_plot) +
     scale_fill_manual(values = c("#228833", "#EE6677")) + 
-    scale_color_manual(values = c("#228833", "#EE6677")) -> plt
+    scale_color_manual(values = c("#228833", "#EE6677")) +
+    theme(legend.position = "none") -> plt
   
 }
 
@@ -309,4 +319,3 @@ linear_pred <- function(ii, d) {
   return(out)
   
 }
-
