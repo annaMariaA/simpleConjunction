@@ -10,7 +10,7 @@ library(tidyverse)
 library(ggthemes)
 library(brms)
 library(tidybayes)
-library(corrr)
+#library(corrr)
 library(patchwork)
 
 options(digits = 2, mc.cores = 10)
@@ -30,18 +30,24 @@ d <- read_csv("../data_collected_by_level_3/Rt_accuracy_extracted.txt") %>%
   select(-age, -sex, -n) %>%
   select(obs = "observer", type = "targetType", targ = "targetPres", nD = "numDist", rt, accuracy) %>%
   mutate(targ = as_factor(targ),
-         targ = fct_recode(targ, absent = "0", present = "1"))
+         targ = fct_recode(targ, absent = "0", present = "1"),
+         type = as_factor(type))
 ```
+
+
 
 ## Check Summary Statistics
 
+### Removing Outliers
+
+First of all, check overall accuracy per person and remove anybody with less than 75%.
 
 ```{r}
 d %>% group_by(obs,  targ) %>%
   summarise(accuracy = mean(accuracy)) %>%
   filter(accuracy < 0.75) -> to_remove
 
-to_remove
+to_remove %>% knitr::kable()
 ```
 
 Looks like we should remove these two participants
@@ -50,11 +56,54 @@ Looks like we should remove these two participants
 d <- filter(d, !(obs %in% unique(to_remove$obs)))
 ```
 
-Let's look at the RTs...
+
+In this analysis, we only want to take the hardest ($nD = 15$) condition:
 
 ```{r}
-min_rt = 0.200
-max_rt = 10.00
+d <- filter(d, nD == 15)
+```
+
+This is what we have left:
+
+```{r}
+summary(d) 
+```
+
+
+### Accuracy
+
+
+Calculate accuracy per person and look at correlations.
+
+```{r}
+d %>% group_by(obs, type, targ) %>%
+  summarise(accuracy = mean(accuracy)) %>%
+  pivot_wider(names_from = "type", values_from = "accuracy") -> d_acc
+
+ggplot(d_acc, aes(x = redHorizontal, y = greenVertical)) + 
+  geom_abline(linetype = 2) + 
+  geom_jitter(alpha = 0.5) +
+  facet_wrap(~targ)
+```
+
+now check for correlations
+
+
+```{r}
+with(filter(d_acc, targ == "absent"),  cor.test(greenVertical, redHorizontal))
+with(filter(d_acc, targ == "present"),  cor.test(greenVertical, redHorizontal))
+```
+
+### Reaction Times
+
+
+Let's look at the RTs...
+
+First, take out some outliers (the most extreme 1% of our data). 
+
+```{r}
+min_rt = quantile(d$rt, 0.005)
+max_rt = quantile(d$rt, 0.995)
 
 ggplot(d, aes(x = rt)) + geom_histogram(bins = 100) +
   geom_vline(xintercept = c(min_rt, max_rt), linetype = 2) +
@@ -62,33 +111,38 @@ ggplot(d, aes(x = rt)) + geom_histogram(bins = 100) +
   coord_cartesian(xlim = c(0.1, 10)) + 
   ggtitle("all RTs")
 
-```
-
-
-
-How doe these numbers look when compared to the histogram of all RTs.
-
-```{r}
-
-```
-
-```{r}
-d %>% 
-  summarise(percent_below = 100*mean(rt<min_rt),
-            percent_above = 100*mean(rt>max_rt),
-            percent_removed = percent_below + percent_above) %>%
-  knitr::kable()
 
 d <- filter(d, rt>min_rt, rt<max_rt)
+```
+
+
+Now we can look at correlations between median accuracy
+
+
+```{r}
+d %>% group_by(obs, type, targ) %>%
+  summarise(rt = median(rt)) %>%
+  pivot_wider(names_from = "type", values_from = "rt") -> d_rt
+
+ggplot(d_rt, aes(x = redHorizontal, y = greenVertical)) + 
+  geom_abline(linetype = 2) + 
+  geom_jitter(alpha = 0.5) +
+  facet_wrap(~targ)
+```
+
+now check for correlations
+
+```{r}
+with(filter(d_rt, targ == "absent"),  cor.test(greenVertical, redHorizontal))
+with(filter(d_rt, targ == "present"),  cor.test(greenVertical, redHorizontal))
 ```
 
 
 ## Output for Modelling
 
 We have already removed 
-- the participant who was very inaccurate
-- RTs < 0.250 seconds (0.2% of data)
-- RTs > 250.0 seconds (0.06% of data)
+- the participants who were very inaccurate
+- The bottom and top 0.5% of our data
 
 Before we run our model, we have to recover the present/absent responses made for each trial (rather than accuracy)
 
@@ -107,84 +161,6 @@ write_csv(d, "../cluster_level3/data_for_model.csv")
 ```
 
 
-# Summary Stats
-
-## Accuracy
-
-```{r}
-d %>% group_by(obs, type, targ, nD) %>% 
-  summarise(accuracy = mean(accuracy)) %>%
-  ggplot(aes(x = as.factor(nD), y = accuracy, fill = type)) + 
-  geom_boxplot(alpha = 0.5) + 
-  facet_wrap(~targ) +
-  scale_fill_manual(values = c("#228833", "#EE6677")) +
-  scale_x_discrete("number of distracters") +
-  theme(legend.position = "bottom") -> plt_acc
-
-
-d %>% group_by(obs, type, targ, nD) %>% 
-  summarise(accuracy = mean(accuracy)) %>%
-  filter(targ == "present", nD == 15) %>% 
-  pivot_wider(values_from = "accuracy", names_from = "type") -> d2
-
-ggplot(d2, aes(x = greenVertical, y = redHorizontal)) + 
-  geom_jitter(alpha = 0.5, width = 0.005, height = 0.005) +
-  geom_abline(linetype = 2) +
-  coord_fixed(xlim = c(0.7, 1), ylim = c(0.7, 1)) +
-  scale_x_continuous("green vertical") +
-  scale_y_continuous("red  vertical") -> plt_acc2
-
-plt_acc + plt_acc2 + plot_layout(widths = c(2, 1))
-
-cor.test(d2$greenVertical, d2$redHorizontal)
-
-#bayes_R2(brm(greenVertical ~ redHorizontal, data = d2))
-
-```
-
-## Reaction Time
-
-```{r}
-d %>% filter(accuracy == 1) %>%
-  group_by(obs, type, targ, nD) %>%
-  summarise(median_rt = median(rt)) -> drt
-
-
-drt %>%
-  ggplot(aes(x = nD, y = median_rt, colour = type)) + 
-  geom_jitter(alpha = 0.5, width = 0.5, height = 0) + 
-  facet_wrap(~targ) + 
-  geom_smooth(method = "lm", se = FALSE, formula = y~x) + 
-  scale_colour_manual(values = c("#228833", "#EE6677")) +
-  scale_x_continuous("number of distracters") + 
-  scale_y_continuous("median reaction time (seconds)") +
-  theme(legend.position = "bottom") -> plt_rt
-
-
-drt %>% group_by(obs, type) %>%
-  summarise(mean_med_rt = mean(median_rt)) %>%
-  pivot_wider(values_from = "mean_med_rt", names_from = "type") %>%
-  ggplot(aes(x = greenVertical, y = redHorizontal)) + 
-  geom_jitter(alpha = 0.5, width = 0.005, height = 0.005) +
-  geom_abline(linetype = 2) +
-  coord_fixed(xlim = c(0.5, 1.4), ylim = c(0.5, 1.4)) +
-  scale_x_continuous("green vertical") +
-  scale_y_continuous("red  vertical") -> plt_rt2
-
-(plt_acc + plt_acc2) / (plt_rt + plt_rt2) + plot_layout(widths = c(2, 1), guides = "collect") & theme(legend.position = "none")
-ggsave("../manuscript/figs/exp_lvl_3_emp.pdf", height = 6, width = 9)
-
-
-d %>% group_by(obs, type, targ) %>% 
-  summarise(rt = median(rt)) %>%
-  filter(targ == "absent") %>% 
-  pivot_wider(values_from = "rt", names_from = "type") -> d2
-
-cor.test(d2$greenVertical, d2$redHorizontal)
-
-```
-
-
 # Model 1 (full)
 
 
@@ -196,10 +172,9 @@ m <- readRDS("models/level3_full.model")
 
 ```{r}
 d %>%
-  mutate(obs = as.factor(obs),
-         nD = nD/max(nD)) -> d
-# 
-# pred_wiener <- d %>% add_predicted_draws(m,negative_rt = TRUE, n = 100) %>%
+  mutate(obs = as.factor(obs)) -> d
+
+# pred_wiener <- d %>% add_predicted_draws(m,negative_rt = TRUE, ndraws = 1) %>%
 #   ungroup() %>%
 #   select(-.chain, -.draw, -.iteration, -.row) %>%
 #   mutate(rt = if_else(response == 1, rt, -rt)) %>%
@@ -214,8 +189,8 @@ d %>%
 
 pred_wiener <- read_csv("predictions_full.csv")
 
-ggplot(pred_wiener, aes(x = rt, fill = emp_pre)) + 
-   geom_density(alpha = 0.25) + 
+ggplot(pred_wiener, aes(x = rt, colour = emp_pre)) + 
+   geom_density(alpha = 0.5) + 
    facet_grid(nD~targ) +
    coord_cartesian(xlim = c(0, 2))
 
@@ -301,7 +276,7 @@ cp_dr <- get_cor_data(cp, "drift rate")
 cp_bias <- get_cor_data(cp, "bias")
     
 bind_rows(cp_dr, cp_bs, cp_bias) %>%
-  group_by( param, slope, targ1) %>%
+  group_by( param, targ1) %>%
   median_hdci(.value) %>%
   knitr::kable()
     
